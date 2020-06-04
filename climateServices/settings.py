@@ -27,7 +27,7 @@ SECRET_KEY = 'f$&hwg5&ur)btsr3f!2%=&j=y=$-21$gb*j1)swj@l5f-jfw(p'
 DEBUG = True
 
 # 允许ip访问列表
-ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '218.205.125.147', '127.0.0.1']
+ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '127.0.0.1']
 
 APPEND_SLASH = False
 
@@ -84,10 +84,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'climate_services',
-        'HOST':'10.10.15.252',
-        'PORT':'3306',
-        'USER':'ocean',
-        'PASSWORD':'oceanclimate_123',
+        'HOST':'x.x.x.x',
+        'PORT':'x',
+        'USER':'xx',
+        'PASSWORD':'xx',
     }
 }
 
