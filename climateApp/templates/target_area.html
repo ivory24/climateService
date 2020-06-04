@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+
+    <script type="text/javascript" src="{% static 'jquery/jquery-3.3.1.js' %}"></script>
+    <script type="text/javascript" src="{% static 'jquery/jquery-3.3.1.min.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap-table/bootstrap-table.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap-table/bootstrap-table-zh-CN.js' %}"></script>
+    <script src="{% static 'openlayers\openlayers_v4.5.0_ol.js' %}" type="text/javascript"></script>
+    <script type="text/javascript" src="{% static 'js/highcharts.js' %}"></script>
+
+    <link href="{% static 'bootstrap\css\bootstrap.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'bootstrap\css\bootstrap.min.css' %}" rel="stylesheet" type="text/css">
+
+    <title>目标区域气象</title>
+
+    <link rel="stylesheet" href="{% static 'openlayers\openlayers_v4.5.0_ol.css' %}" type="text/css">
+   <style>
+     .map {
+       position: relative;
+       height: 100%;
+       width: 100%;
+     }
+      .sea-map-label {
+    position: absolute;
+    top: 10px;
+    right: 170px;
+    border: 1px;
+    border-color: #333;
+    background-color: #339999;
+    color: #fff;
+    box-shadow: 0px 0px 2px #666;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:80px;
+         text-align: center;
+    }
+     .star-map-label {
+    position: absolute;
+    top: 10px;
+    right: 90px;
+    border: 1px;
+    border-color: #333;
+    background-color: #339999;
+    color: #fff;
+    box-shadow: 0px 0px 2px #666;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:80px;
+         text-align: center;
+    }
+     .map-label {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border: 1px;
+    border-color: #333;
+    background-color: #339999;
+    color: #fff;
+    box-shadow: 0px 0px 2px #666;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:80px;
+         text-align: center;
+    }
+     .left-precision-label {
+         position: absolute;
+    top: 40px;
+    right: 150px;
+    color: #fff;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:100px;
+         text-align: right;
+         color: #0f0f0f;
+     }
+     .right-precision-label {
+         position: absolute;
+    top: 40px;
+    right: 40px;
+    color: #fff;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:50px;
+         text-align: left;
+         color: #0f0f0f;
+     }
+     .rangeContainer {
+         position: absolute;
+         top: 40px;
+         right: 100px;
+         cursor: pointer;
+         width: 50px;
+
+     }
+     .canvas-rect {
+         position: absolute;
+         top: 70px;
+         right: 10px;
+         cursor: pointer;
+     }
+       .canvas-rect-1 {
+         position: absolute;
+         top: 90px;
+         right: 10px;
+         cursor: pointer;
+     }
+       .model-select {
+           position: absolute;
+         top: 10px;
+         right: 250px;
+         cursor: pointer;
+       }
+
+       .weather-icon {
+           position: absolute;
+         top: 10px;
+         right: 480px;
+         cursor: pointer;
+       }
+       .row-eq-height{
+        display: flex;
+       }
+
+     .ol-popup {
+      position: absolute;
+      background-color: white;
+      -webkit-filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+      filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #cccccc;
+      bottom: 12px;
+      left: -50px;
+      min-width: 280px;
+    }
+    .ol-popup:after, .ol-popup:before {
+      top: 100%;
+      border: solid transparent;
+      content: " ";
+      height: 0;
+      width: 0;
+      position: absolute;
+      pointer-events: none;
+    }
+    .ol-popup:after {
+      border-top-color: white;
+      border-width: 10px;
+      left: 48px;
+      margin-left: -10px;
+    }
+    .ol-popup:before {
+      border-top-color: #cccccc;
+      border-width: 11px;
+      left: 48px;
+      margin-left: -11px;
+    }
+    .ol-popup-closer {
+      text-decoration: none;
+      position: absolute;
+      top: 2px;
+      right: 8px;
+    }
+    .ol-popup-closer:after {
+      content: "x";
+    }
+   </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+           <div class="nav navbar-header navbar-left">
+               <a class="navbar-brand">CSSC</a>
+           </div>
+            <div class="nav navbar-nav navbar-right" >
+                <li><a href="/home">首页</a></li>
+                <li><a href="/seaway">航线气象</a></li>
+                <li><a href="/typhoon">台风预警</a></li>
+                <li><a href="/ship">船只气象</a></li>
+                <li><a href="/area">目标区域气象</a></li>
+                <li>
+                    <select style="margin-top: 12px; color: #000;" onchange="changeSystem()" id="system-select">
+                        <option value="transfer">江海联运</option>
+                        <option value="manage">海事监管</option>
+                        <option selected="selected" value="weather">精细化气象</option>
+                        <option value="ecology">海岸线生态</option>
+                    </select>
+                </li>
+                <!--<li><a><span class="glyphicon glyphicon-user"></span></a></li>
+                <li><a>admin</a></li>-->
+                <li><a><span class="glyphicon glyphicon-log-out" style="margin-right: 20px" onclick="logout()"></span></a></li>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                               目标区域信息
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                        <table class="bootstrap-table" border="1" align="center" id="area-info-table">
+
+                       </table>
+                    </div>
+                    <!--
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            设置编号
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                       <form>
+                           <p align="center">
+                               设置编号
+                               <input id="target_number" type="number" min="0" max="2147483647" size="12" style="margin-right:40px">
+
+                               <input type="button" onclick="submitEvent()" value="提交">
+                           </p>
+
+                       </form>
+                    </div>-->
+                </div>
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" id="chart-title">
+                            天气预报
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                        <table style="width:100%; table-layout:fixed" class="border" rules="none">
+                           <tr align="left">
+                               <td onclick="ship_temperature_chart()"><span style="background:#FF0000">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>温度</span>
+                               </td>
+                               <td onclick="ship_humidity_chart()"><span style="background:#003366">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>湿度</span>
+                               </td>
+                               <td onclick="ship_wind_speed_chart()"><span style="background:#0099CC">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>风速</span></td>
+                               <td onclick="ship_wind_component_chart()"><span style="background:#FF9933">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>风向</span>
+                               </td>
+                               <td onclick="ship_precipitation_chart()"><span style="background:#99FFCC">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>降雨量</span>
+                               </td>
+                           </tr>
+                            <tr align="left">
+                               <td onclick="ship_sea_wave_chart()"><span style="background:#00CC33">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>浪&nbsp&nbsp&nbsp</span></td>
+                                <td onclick="ship_height_swell_chart()"><span style="background:#CC9900">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>&nbsp涌&nbsp&nbsp</span></td>
+                                <td onclick="ship_ocean_current_h_chart()"><span style="background:#CC9999">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>&nbsp流&nbsp</span></td>
+                                <td onclick="ship_visibility_chart()"><span style="background:#696969">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>能见度</span></td>
+                                <td></td>
+                           </tr>
+                        </table>
+                        <div id="chart_container" style="height: 300px"></div>
+                    </div>
+                </div>
+                <div class="panel panel-danger">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            天气预警
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                        <span style="color:#FF0000">台风天气预警</span>
+                        <p id="typhoon_warning"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div id="map" class="map" style="width: 100%; height: 100%; margin: 0;"></div>
+                <div id="popup" class="ol-popup">
+                    <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+                    <div id="popup-content"></div>
+                </div>
+                   <!---<div class="dropdown">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                        出发地
+                        <span class="caret"></span>
+                    </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a>出发地1</a></li>
+                            <li><a>出发地2</a></li>
+                        </ul>
+                    </div>
+                <div class="dropdown">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                        目的地
+                        <span class="caret"></span>
+                    </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a>目的地1</a></li>
+                            <li><a>目的地2</a></li>
+                        </ul>
+                    </div>--->
+
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function logout(){
+            delCookie("token");
+            window.location.href="http://218.205.125.100/jfinal_sso/member/logout";
+        }
+        function getCookie(name)
+        {
+            var arr,reg=new RegExp("(^| )"+name+"=([^;]*)(;|$)");
+            if(arr=document.cookie.match(reg))
+                return unescape(arr[2]);
+            else
+                return null;
+        }
+        function delCookie(name)
+        {
+            var exp = new Date();
+            exp.setTime(exp.getTime() - 1);
+            var cval=getCookie(name);
+            if(cval!=null)
+                document.cookie= name + "="+cval+";expires="+exp.toGMTString();
+        }
+        function changeSystem() {
+            var systemName = $('select  option:selected').val();
+            if (systemName == "transfer") {
+                window.location.href="http://218.205.125.144:9620" + "?" + document.cookie;
+            } else if (systemName == "manage") {
+                window.location.href="http://218.205.125.144:9630" + "?" + document.cookie;
+            } else if (systemName == "weather") {
+                window.location.href="http://218.205.125.147:8002/home" + "?" + document.cookie;
+            } else {
+                window.location.href="http://218.205.125.141:8090/zsngweb" + "?" + document.cookie;
+            }
+
+        }
+        $('.dropdown-toggle').dropdown();
+
+        var offshore_layer;
+        $(document).ready(function() {
+            updateMapSize();
+            //document.getElementById("slider").style.display="none";
+            show_offshore();
+
+        })
+        var justChangeModel = 0;
+        var mapView = new ol.View({
+        /*projection: "EPSG:4326",//地图坐标参考系
+        //extent: [105, 0, 135, 40],
+         center: [120.00, 20.00],*/
+            projection:  "EPSG:3857", //"EPSG:4326",//地图坐标参考系
+            displayprojection:  "EPSG:3857",
+            //center: ol.proj.transform( [122.0969,29.9297] ,'EPSG:4326','EPSG:3857'),
+         //zoom: 9,
+            center: ol.proj.transform( [122.3,30] ,'EPSG:4326','EPSG:3857'),
+            zoom: 9,
+            minZoom: getMinZoom()
+       });
+        var mapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               //url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+               url: 'http://218.205.125.142:8001/{z}/{x}/{y}.png'
+               //url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+           })
+         });
+        var map = new ol.Map({
+       target: 'map',
+       layers: [mapLayer],
+       //projection: new ol.proj("EPSG:4326"),
+       //displayProjection: new ol.proj("EPSG:4326"),
+       view: mapView
+      });
+
+        var fullScreenControl = new ol.control.FullScreen();
+        map.addControl(fullScreenControl);
+        map.render();
+        // <input type="submit" class="submit-button" onclick="clearEvent()" id="clear" value="清空"/>
+        var viewport = map.getViewport();
+        $(viewport).append(
+            /*'<div class="weather-icon"><img src="/static/img/weather/sun.png" height="30" width="30" onclick="show_sun()"/>' +
+            '<img src="/static/img/weather/thunder.png" height="30" width="30"  onclick="show_thunder()"/>' +
+            '<img src="/static/img/weather/day_cloudy.png" height="30" width="30" onclick="show_day_cloudy()"/>' +
+            '<img src="/static/img/weather/day_small_rain.png" height="30" width="30" onclick="show_day_small_rain()"/>' +
+            '<img src="/static/img/weather/small_rain.png" height="30" width="30" onclick="show_small_rain()"/>' +
+            '<img src="/static/img/weather/night_rain.png" height="30" width="30" onclick="show_night_rain()"/>' +
+            '<img src="/static/img/weather/night_cloudy.png" height="30" width="30" onclick="show_night_cloudy()"/></div>' +*/
+            '<div class="model-select">' +
+            '<select style="position: absolute; top: 0px; right: 135px; height: 25px" id="model-select" onchange="updateModel()"><option>普通模式</option><option>绘制模式</option></select>' +
+                '<input class="submit-button" type="submit" value="清空" onclick="clearEvent()" style="position: absolute; top: 0px; right: 70px; height: 25px">' +
+                '<input class="submit-button" type="submit" value="撤销" onclick="cancelEvent()" style="position: absolute; top: 0px; right: 10px; height: 25px"></div>' +
+                '<div id="all-range" style="display: none"><div class="left-precision-label">精度5km*5km</div>' +
+                '<div class="right-precision-label">10km*10km</div>' +
+                '<div class="rangeContainer"><input id="slider" type="range" min="5" max="10" step="5" value="5" class="rangebar"/></div></div>' +
+                '<div id="sea-map-label" class="sea-map-label">海图</div>' +
+                '<div id="star-map-label" class="star-map-label">卫星图</div>' +
+                '<div id="map-label" class="map-label">地图</div>'
+        );
+        //+'<canvas id="myCanvas" class="canvas-rect" width="100" height="10" style="border: 1px solid black"></canvas>' +
+        //   '<canvas id="myCanvas1" class="canvas-rect-1" width="100" height="10" style="border: 1px solid black"></canvas>');
+
+        var twoMeshFlag = '0';
+        var weatherFlag = [0,0,0,0,0,0,0]
+        document.getElementById('sea-map-label').onclick = function() {
+          //map.removeLayer(mapLayer);
+          //map.addLayer(openSeaMapLayer);
+          var newmapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               //url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                 //url: 'http://124.193.165.122:8083/{z}/{x}/{y}.png'
+               url: 'http://218.205.125.142:8001/{z}/{x}/{y}.png'
+               //url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+           })
+         });
+          var alllayers = map.getLayerGroup().getLayers();
+          alllayers.clear();
+          map.removeLayer(mapLayer);
+          map.addLayer(newmapLayer);
+          addAllLayer();
+
+      }
+        document.getElementById('star-map-label').onclick = function() {
+          var newmapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               //url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                 //url: 'http://124.193.165.122:8083/{z}/{x}/{y}.png'
+               url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+           })
+         });
+          var alllayers = map.getLayerGroup().getLayers();
+        alllayers.clear();
+          map.removeLayer(mapLayer);
+          map.addLayer(newmapLayer);
+          addAllLayer();
+      }
+        document.getElementById('map-label').onclick = function() {
+          var newmapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                 //url: 'http://124.193.165.122:8083/{z}/{x}/{y}.png'
+               //url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+           })
+         });
+          var alllayers = map.getLayerGroup().getLayers();
+          alllayers.clear();
+          map.removeLayer(mapLayer);
+          map.addLayer(newmapLayer);
+          addAllLayer();
+      }
+        document.getElementById('slider').onclick = function () {
+                twoMeshFlag = '1';
+                var value_km = document.getElementById('slider').value;
+                var k =  history_layers.length-1;
+                for (var j = k; j>=0; j--) {
+                    map.removeLayer(history_layers[j]);
+                }
+                history_numbers=[]
+                history_layers=[]
+                for (var j = 0; j < history_poses.length ; j++) {
+                    layers=[]
+                    history_precisions[j] = value_km;
+                    meshGeneration(history_poses[j], value_km);
+                    addOtherMeshGeneration(history_poses[j], value_km, history_layers[history_layers.length-1].getSource())
+                }
+                showAllWeather()
+                var data = getTableData(history_numbers, history_poses,history_precisions);
+            $("#area-info-table").bootstrapTable('load', data);
+            updateMapSize();
+            }
+        $("#area-info-table").bootstrapTable({
+
+            //url: '/typhoon/get_typhoon_info',         //请求后台的URL（*）
+            //method: 'get',                      //请求方式（*）
+            striped: true,                      //是否显示行间隔色
+            cache: false,                       //是否使用缓存，默认为true，所以一般情况下需要设置一下这个属性（*）
+            pagination: true,                   //是否显示分页（*）
+            sortable: false,                     //是否启用排序
+            sortOrder: "asc",                   //排序方式
+            //queryParams: queryParams,//传递参数（*）
+            //sidePagination: "client",           //分页方式：client客户端分页，server服务端分页（*）
+            pageNumber:1,                       //初始化加载第一页，默认第一页
+            pageSize: 5,                       //每页的记录行数（*）
+            pageList: [],        //可供选择的每页的行数（*）
+            search: false,                       //是否显示表格搜索，此搜索是客户端搜索，不会进服务端，所以，个人感觉意义不大
+            strictSearch: false,
+            showColumns: false,                  //是否显示所有的列
+            showRefresh: false,                  //是否显示刷新按钮
+            minimumCountColumns: 2,             //最少允许的列数
+            clickToSelect: true,                //是否启用点击选中行
+            //height: 300,                        //行高，如果没有设置height属性，表格自动根据记录条数觉得表格高度
+            uniqueId: "ID",                     //每一行的唯一标识，一般为主键列
+            showToggle:false,                    //是否显示详细视图和列表视图的切换按钮
+            cardView: false,                    //是否显示详细视图
+            detailView: false,                   //是否显示父子表
+           silent:true,
+            columns: [
+            {
+                field: 'number',
+                title: '编号',
+                align:'center',
+            },
+            {
+                field: 'pos1',
+                title: '左上经纬度',
+                 align:'center',
+            },
+            {
+                field: 'pos2',
+                title: '右下经纬度',
+                align:'center',
+            },
+            {
+                field: 'precision',
+                title: '精度',
+                 align:'center',
+            },
+            ],
+            onLoadError:function(status) {
+            console.log("^^^^^^^^^^^^^^^^^^");
+            console.log(status);
+            //alert("error");
+            },
+            onLoadSuccess:function(data) {
+            console.log(data.length);
+
+            },
+           formatLoadingMessage: function () {
+                return "";
+           }
+            });
+
+        var obj = document.getElementById("typhoon_warning");
+        var data = JSON.parse(JSON.stringify({{typhoon_warning|safe}}[0]));
+        obj.innerHTML = data.warning;
+        var createLabelStyle = function (feature) {
+                //返回一个样式
+        return new ol.style.Style({
+             //文本样式
+                    text: new ol.style.Text({
+                        //对齐方式
+                        textAlign: 'center',
+                        //文本基线
+                        textBaseline: 'middle',
+                        //字体样式
+                        font: 'normal 14px 微软雅黑',
+                        //文本内容
+                        text: feature.get('name'),
+                        //填充样式
+                        fill: new ol.style.Fill({
+                            color: '#aa3300'
+                        }),
+                        //笔触
+                        stroke: new ol.style.Stroke({
+                            color: '#ffcc33',
+                            width: 2
+                        })
+                    }),
+            zIndex:20
+                });
+    };
+        var draw;
+        var source = new ol.source.Vector({wrapX: false});
+        var vector = new ol.layer.Vector({
+            source: source,
+        });
+        map.addLayer(vector);
+        var layers = [];
+        var history_layers =[];
+        var history_poses = [];
+        var history_precisions = [];
+        var history_real_precisions = []
+        var history_real_num=[]
+        var history_numbers=[];
+        var history_weathers={};
+        var onelon;
+        var onelat;
+        var twolon;
+        var twolat;
+        var weather_chart;
+        var container = document.getElementById("popup");
+        var content = document.getElementById("popup-content");
+        var popupCloser = document.getElementById("popup-closer");
+
+
+
+        function getMeshInfo(pos, value_km) {
+            var onelon = pos[0];
+            var onelat = pos[1];
+            var twolon = pos[2];
+            var twolat = pos[3];
+
+            var lon_add = value_km*0.01;
+            var lat_add = value_km*0.01;
+            var lon_num = Math.round(Math.abs((twolon-onelon)/lon_add));
+            var lat_num = Math.round(Math.abs((twolat-onelat)/lat_add));
+
+            lon_add = (twolon-onelon)/lon_num;
+            lat_add = (twolat-onelat)/lat_num;
+
+            var res=[];
+            res.push([onelon, onelat, twolon, twolat])
+            res.push([lon_add, lat_add])
+            res.push([lon_num, lat_num])
+
+            var onelon = pos[0]-(pos[2]-pos[0])-0.1;
+            var onelat = pos[1];
+            var twolon = pos[2]-(pos[2]-pos[0])-0.1;
+            var twolat = pos[3];
+
+            var other_value_km;
+            if (value_km==5)
+                other_value_km = 10;
+            else
+                other_value_km = 5;
+            var lon_add = other_value_km*0.01;
+            var lat_add = other_value_km*0.01;
+            var lon_num = Math.round(Math.abs((twolon-onelon)/lon_add));
+            var lat_num = Math.round(Math.abs((twolat-onelat)/lat_add));
+
+            lon_add = (twolon-onelon)/lon_num;
+            lat_add = (twolat-onelat)/lat_num;
+
+            res.push([onelon, onelat, twolon, twolat])
+            res.push([lon_add, lat_add])
+            res.push([lon_num, lat_num])
+            res.push([parseInt(value_km), other_value_km])
+
+            return res;
+        }
+        var overlay = new ol.Overlay({
+         //设置弹出框的容器
+        element: container,
+        //是否自动平移，即假如标记在屏幕边缘，弹出时自动平移地图使弹出框完全可见
+        autoPan: true
+      });
+        popupCloser.onclick = function() {
+        overlay.setPosition(undefined);
+        popupCloser.blur();
+        return false;
+      };
+        map.on('click', function(evt) {
+            var feature = map.forEachFeatureAtPixel(evt.pixel,
+                function(feature) {
+                  return feature;
+                });
+            if (feature && getModel()=="普通模式") {
+                if (justChangeModel) {
+                    justChangeModel = 0;
+                    return;
+                }
+                //alert(evt.coordinate);
+                var coordinate_t= ol.proj.transform(evt.coordinate, "EPSG:3857", "EPSG:4326");
+                var cur_lon = coordinate_t[0];
+                var cur_lat = coordinate_t[1];
+                var search_lon;
+                var search_lat;
+                //alert(coordinate_t);
+                if (twoMeshFlag=="1") {
+                    for ( var i = 0; i < history_poses.length; i++) {
+                        var one_mesh_info = getMeshInfo(history_poses[i], history_precisions[i]);
+                        //res.push([onelon, onelat, twolon, twolat])
+                        if (judgePosInArea([cur_lon, cur_lat], one_mesh_info[0])) {
+                            search_lon = cur_lon;
+                            search_lat = cur_lat;
+                            break;
+                        }
+                        if (judgePosInArea([cur_lon, cur_lat], one_mesh_info[3])) {
+                            search_lon = cur_lon + (one_mesh_info[0][2]-one_mesh_info[0][0])+0.1;
+                            search_lat = cur_lat;
+                            break;
+                        }
+                    }
+                } else {
+                    for ( var i = 0; i < history_poses.length; i++) {
+                        var one_mesh_info = getMeshInfo(history_poses[i], history_precisions[i]);
+                        //res.push([onelon, onelat, twolon, twolat])
+                        if (judgePosInArea([cur_lon, cur_lat], one_mesh_info[0])) {
+                            search_lon = cur_lon;
+                            search_lat = cur_lat;
+                            break;
+                        }
+                    }
+                }
+                $.ajax({
+                   url : 'target_area/get_pos_weather', 　
+    　　　　        type : 'post',　　　　　　　　
+    　　　　        data : {　　　　　　　　　　　
+    　　　　　　　　  'lon' : search_lon,
+                    'lat': search_lat,
+                    'precision':　document.getElementById('slider').value    　　　　　
+    　　　　　　  　　},
+    　　　　        dataType : 'json',
+    　　　　        success: function(res){　　　
+                    if (res.flag == 1) {
+                        weather_chart = res.chart;
+                        ship_temperature_chart();
+                        content.innerHTML = '经纬度坐标：' + search_lon.toFixed(2) + ', ' + search_lat.toFixed(2) +
+                        '<br> 温度: '+res.climate.temperature +
+                        '\xB0C<br> 气压: '+res.climate.pressure+
+                        'hPa<br> 降水: '+res.climate.precipitation+
+                        'mm<br> 风速: '+res.climate.wind_speed+
+                        'm/s<br> 风向: '+getDirectFromAngle(res.climate.wind_component)+ '（' + res.climate.wind_component + '度）' +
+                        '<br> 能见度: '+res.climate.visibility+
+                        'm<br> 海浪: '+res.climate.sea_wave+
+                        'm<br> 涌流方向: '+getDirectFromAngle(res.climate.direction_swell)+  '（' + res.climate.direction_swell + '度）' +
+                        '<br> 涌流周期: '+res.climate.period_swell+
+                        's<br> 涌流高度: '+res.climate.height_swell+
+                        'm<br> 海流水位: '+res.climate.ocean_current_h+
+                        'm<br> 海流海温: '+res.climate.ocean_current_t+
+                        '\xB0C<br> 海流xyz方向的流: '+res.climate.ocean_current_u+
+                        'cm/s, '+res.climate.ocean_current_v+
+                        'cm/s, '+res.climate.ocean_current_w + 'cm/s';
+                        //设置overlay的显示位置
+
+                        overlay.setPosition(evt.coordinate);
+                        //显示overlay
+                        map.addOverlay(overlay);
+                        var coor;
+                        var weather_names = ['sun.png', 'day_cloudy.png','day_small_rain.png','night_cloudy.png', 'night_rain.png','small_rain.png','thunder.png']
+                        var left_weather = weather_names[Math.round(Math.random()*6)];
+                        var right_weather = weather_names[Math.round(Math.random()*6)];
+                        if (twoMeshFlag=="1") {
+                            for ( var i = 0; i < history_poses.length; i++) {
+                                var one_mesh_info = getMeshInfo(history_poses[i], history_precisions[i]);
+                                //res.push([onelon, onelat, twolon, twolat])
+                                if (judgePosInArea([cur_lon, cur_lat], one_mesh_info[0])) {
+                                    coor = getShowPosInArea([cur_lon, cur_lat], one_mesh_info[0], history_precisions[i])
+                                    addWeatherIconFeature(coor, right_weather, history_layers[i].getSource())
+                                    break;
+                                }
+                                if (judgePosInArea([cur_lon, cur_lat], one_mesh_info[3])) {
+                                    coor = getShowPosInArea([cur_lon, cur_lat], one_mesh_info[3], one_mesh_info[6][1])
+                                    addWeatherIconFeature(coor, left_weather, history_layers[i].getSource())
+                                    break;
+                                }
+                            }
+                        } else {
+                            for ( var i = 0; i < history_poses.length; i++) {
+                                var one_mesh_info = getMeshInfo(history_poses[i], history_precisions[i]);
+                                //res.push([onelon, onelat, twolon, twolat])
+                                if (judgePosInArea([cur_lon, cur_lat], one_mesh_info[0])) {
+                                    var coor = getShowPosInArea([cur_lon, cur_lat], one_mesh_info[0], history_precisions[i])
+                                    addWeatherIconFeature(coor, right_weather, history_layers[i].getSource())
+                                    break;
+                                }
+                            }
+                        }
+                    }　
+                    else {
+                        clear_chart();
+                        alert("该地理坐标没有相关的气象信息。");
+                    }
+
+                    //wq
+
+
+
+
+    　　　　　　  }
+
+    　　　　    });
+            }
+          });
+
+        function addWeatherIconFeature(cor, img_file, source) {
+            var iconFeature = new ol.Feature({
+                    geometry: new ol.geom.Point(ol.proj.transform(cor ,'EPSG:4326','EPSG:3857'),"XY")});
+            var iconStyle = new ol.style.Style({
+              image: new ol.style.Icon({
+                  anchor: [0.5, 0.5],
+                  crossOrigin: 'anonymous',
+                  scale:0.06,
+                  src:'/static/img/weather/' +img_file
+              })
+            });
+            iconFeature.setStyle(iconStyle);
+            source.addFeature(iconFeature);
+            map.render()
+        }
+
+        function judgePosInArea(pos, area) {
+            //pos=[lon,lat]
+            //area = [onelon, onelat, twolon, twolat]
+            if (pos[0] >= area[0] && pos[0] <= area[2]  && pos[1] >= area[3] && pos[1] <= area[1]) {
+                return true;
+            } else
+                return false;
+        }
+
+        function getShowPosInArea(pos, area, precision) {
+            precision = precision*1.0/100
+            var onelon = area[0]
+            var onelat = area[1]
+            var twolon = area[2]
+            var twolat = area[3]
+            var showlon = parseInt((pos[0]-onelon)/precision)*precision + onelon + precision/2;
+            var showlat = onelat - parseInt((onelat-pos[1])/precision)*precision - precision/2;
+            if (showlon > twolon)
+                showlon = twolon - precision/2
+            if (showlon < onelon)
+                showlon = onelon + precision/2
+            if (showlat > onelat)
+                showlat = onelat - precision/2
+            if (showlat < twolat)
+                showlat = twolat + precision/2
+            return [showlon, showlat]
+        }
+
+        function getTableData(numbers, poses, precisions) {
+
+            var datas=[];
+            for (var i = 0; i < numbers.length; i++) {
+                var onedata={
+                    'number':numbers[i],
+                    'pos1':[poses[i][0].toFixed(2), poses[i][1].toFixed(2)],
+                    'pos2': [poses[i][2].toFixed(2), poses[i][3].toFixed(2)],
+                    'precision':precisions[i]
+                };
+                datas.push(onedata);
+            }
+            return datas;
+        }
+        function addPonitToGeometry(geometry, arr) {
+              for (var i = 0; i < arr.length; i++) {
+                  geometry.appendCoordinate(ol.proj.transform(arr[i],"EPSG:4326","EPSG:3857"));
+              }
+            }
+        function drawline(map, coordinate, linecolor) {
+                var geometry = new ol.geom.LineString(); //线,Point 点,Polygon 面
+                addPonitToGeometry(geometry, coordinate);
+                var LineStringFeature = new ol.Feature(geometry); //绘制线的数据
+
+                        //将线添加到Vector绘制层上
+                /*var source = new ol.source.Vector();
+                source.addFeature(LineStringFeature);
+
+                var vectorLayer = new ol.layer.Vector({
+                    name: '1',
+                    source: source,
+                    style: new ol.style.Style({
+                        stroke: new ol.style.Stroke({
+                            color: linecolor, //'dodgerblue',
+                            width: 3
+                        }),
+                    })
+                });
+                layers.push(vectorLayer);
+                map.addLayer(vectorLayer); //将绘制层添加到地图容器中
+                return vectorLayer;*/
+                return LineStringFeature;
+            }
+        function getDirectFromAngle(angle_str) {
+             var angle_float = parseFloat(angle_str);
+             var direct_list = ['北','北东北','东北','东东北',
+                                '东','东东南','东南','南东南',
+                                '南','南西南','西南','西西南',
+                                '西','西西北','西北','北西北'];
+             var i;
+             for (i = 0; i < 16; i++) {
+                if (angle_float > (348.75 + i*22.5)%360 && angle_float <= (11.25 + i*22.5))
+                    return direct_list[i];
+             }
+             return direct_list[0];
+         }
+        function clear_chart() {
+                document.getElementById("chart-title").innerHTML= "天气预报-没有该地理坐标的气象信息";
+                document.getElementById("chart_container").innerHTML = "";
+
+        }
+        function ship_temperature_chart() {
+              if (weather_chart)
+                ship_chart(weather_chart.temperature_chart[0], "\xB0C");
+          }
+        function ship_humidity_chart() {
+           //var json = {{ship_humidity_chart|safe}}[0];
+          if(weather_chart)
+              ship_chart(weather_chart.humidity_chart[0], "%");
+
+       }
+        function ship_wind_speed_chart() {
+           //var json = {{ship_wind_speed_chart|safe}}[0];
+          if (weather_chart)
+           ship_chart(weather_chart.wind_speed_chart[0], "m/s");
+
+      }
+        function ship_wind_component_chart() {
+          if (!weather_chart)
+              return;
+          var json = JSON.parse(JSON.stringify(weather_chart.wind_component_chart[0]));
+            var chart_data = json.series[0].data;
+            json.series[0].pointStart=Date.UTC(2017, 1, 1);
+
+		   for (x in json.series[0].data)
+		   {
+		        chart_data[x].y = parseFloat(chart_data[x].y);
+		   }
+
+		   json.yAxis.labels = {
+            formatter: function(){
+            return this.value + "度";
+            }
+            };
+            json.xAxis.labels = {
+            formatter: function(){
+                    var d = new Date(this.value);
+                    var s = '<b>' + d.getUTCMonth() + '月' + d.getUTCDate() + '日'
+                    + d.getUTCHours() + '时' + '</b>';
+                    return s;
+            }
+            };
+            json.tooltip = {
+                formatter: function() {
+                    var d = new Date(this.point.x);
+                    var s = '<b>' + d.getUTCFullYear() + '年' + d.getUTCMonth() + '月' + d.getUTCDate() + '日'
+                    + d.getUTCHours() + '时' + '</b>,' + getDirectFromAngle(this.point.y) + "方向";
+                    return s;
+                }
+            };
+
+		   json.series[0].data = chart_data;
+		   json.legend.enabled=false;
+            $('#chart_container').highcharts(json);
+      }
+        function ship_precipitation_chart() {
+          if (!weather_chart)
+              return;
+           //var json = {{ship_precipitation_chart|safe}}[0];
+           ship_chart(weather_chart.precipitation_chart[0], "mm");
+
+      }
+        function ship_sea_wave_chart() {
+          if (!weather_chart)
+              return;
+           //var json = {{ship_sea_wave_chart|safe}}[0];
+           ship_chart(weather_chart.sea_wave_chart[0], "m");
+
+      }
+        function ship_height_swell_chart() {
+          if (!weather_chart)
+              return;
+           //var json = {{ship_height_swell_chart|safe}}[0];
+           ship_chart(weather_chart.height_swell_chart[0], "m");
+
+      }
+        function ship_ocean_current_h_chart() {
+          if (!weather_chart)
+              return;
+           //var json = {{ship_ocean_current_h_chart|safe}}[0];
+           ship_chart(weather_chart.ocean_current_h_chart[0], "m");
+
+      }
+        function ship_visibility_chart() {
+          if (!weather_chart)
+              return;
+           //var json = {{ship_visibility_chart|safe}}[0];
+           ship_chart(weather_chart.visibility_chart[0], "m");
+
+      }
+        function ship_chart(json, ylabel) {
+          //alert(json.series);
+           var nowDate = new Date();
+		   json.series[0].pointStart=Date.UTC(2017, nowDate.getMonth()+1, nowDate.getDate(), nowDate.getHours());
+		   var chart_data = JSON.parse(JSON.stringify(json)).series[0].data;
+
+		   for (x in chart_data)
+		   {
+		        chart_data[x] = parseFloat(chart_data[x]);
+		   }
+
+		   json.series[0].data = chart_data;
+		   json.yAxis.labels = {
+            formatter: function(){
+            return this.value + ylabel;
+            }
+            };
+            json.xAxis.labels = {
+            formatter: function(){
+                    var d = new Date(this.value);
+                    var s = '<b>' + d.getUTCMonth() + '月' + d.getUTCDate() + '日'
+                    + d.getUTCHours() + '时' + '</b>';
+                    return s;
+            }
+            };
+            json.tooltip = {
+                formatter: function() {
+                    var d = new Date(this.point.x);
+                    var s = '<b>' + d.getUTCFullYear() + '年' + d.getUTCMonth() + '月' + d.getUTCDate() + '日'
+                    + d.getUTCHours() + '时' + '</b>,' + this.point.y + ylabel;
+                    return s;
+                }
+            };
+            json["plotOptions"] = {
+                    area: {
+                        fillColor: {
+                            linearGradient: {
+                                x1: 0,
+                                y1: 0,
+                                x2: 0,
+                                y2: 1
+                            },
+                            stops: [
+                                [0, Highcharts.getOptions().colors[0]],
+                                [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                            ]
+                        },
+                        marker: {
+                            radius: 2
+                        },
+                        lineWidth: 1,
+                        states: {
+                            hover: {
+                                lineWidth: 1
+                            }
+                        },
+                        threshold: null
+                    }
+            };
+            //pointFormat='{point.x}.getFullYear():{point.y}';
+            json.legend.enabled=false;
+
+            $('#chart_container').highcharts(json);
+
+      }
+        function showShipLabel(location, info) {
+         var iconFeature = new ol.Feature({
+            geometry: new ol.geom.Point(location),
+            name: 'Null Island',
+            population: 4000,
+            rainfall: 500
+          });
+
+          var iconStyle = new ol.style.Style({
+            image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+              anchor: [0.5, 46],
+              anchorXUnits: 'fraction',
+              anchorYUnits: 'pixels',
+              //src: 'https://openlayers.org/en/v4.5.0/examples/data/icon.png'
+                src: '/static/img/climate_img/icon.png',
+                scale:0.5
+            }))
+          });
+
+          iconFeature.setStyle(iconStyle);
+
+          var vectorSource = new ol.source.Vector({
+            features: [iconFeature]
+          });
+
+          var vectorLayer = new ol.layer.Vector({
+            source: vectorSource
+          });
+          map.addLayer(vectorLayer);
+          showInfo = info;
+          return vectorLayer;
+     }
+        function meshGeneration(pos, value_km) {
+            var onelon = pos[0];
+            var onelat = pos[1];
+            var twolon = pos[2];
+            var twolat = pos[3];
+
+            var number_feature;
+
+            if(history_numbers.length ==0){
+              number_feature = showNumber([onelon, onelat], 1);
+              history_numbers.push(1);
+            }
+            else {
+              history_numbers.push(history_numbers[history_numbers.length-1]+1);
+              number_feature = showNumber([onelon, onelat], history_numbers[history_numbers.length-1]);
+            }
+
+
+            var coordinate = [[onelon, onelat], [twolon, onelat], [twolon, twolat], [onelon, twolat], [onelon, onelat]];
+
+            var source = new ol.source.Vector();
+
+            var onefeature = drawline(map, coordinate, 'yellow');
+            source.addFeature(onefeature);
+
+            source.addFeature(number_feature);
+
+
+            //var lon_add = parseFloat((1/(111*Math.cos(Math.PI*((onelat+twolat)/2/180)))*value_km).toFixed(2));
+            //var lat_add = parseFloat((1/111*value_km).toFixed(2));
+            var lon_add = value_km*0.01;
+            var lat_add = value_km*0.01;
+            var lon_num = Math.round(Math.abs((twolon-onelon)/lon_add));
+            var lat_num = Math.round(Math.abs((twolat-onelat)/lat_add));
+
+            lon_add = (twolon-onelon)/lon_num;
+            lat_add = (twolat-onelat)/lat_num;
+
+            history_real_precisions.push([lon_add, lat_add]);
+            history_real_num.push([lon_num, lat_num]);
+
+            var curlon = onelon;
+            while (lon_num > 0 && curlon < twolon) {
+                coordinate = [[curlon, onelat], [curlon, twolat]];
+                onefeature = drawline(map, coordinate, 'yellow');
+                source.addFeature(onefeature);
+                curlon += lon_add;
+                lon_num--;
+            }
+
+            var curlat = onelat;
+            while (lat_num > 0 && curlat > twolat) {
+                coordinate = [[onelon, curlat], [twolon, curlat]];
+                onefeature = drawline(map, coordinate, 'yellow');
+                source.addFeature(onefeature);
+                curlat += lat_add;
+                lat_num--;
+            }
+
+            var vectorLayer = new ol.layer.Vector({
+                    name: '1',
+                    source: source,
+                    style: new ol.style.Style({
+                        stroke: new ol.style.Stroke({
+                            color: 'yellow', //'dodgerblue',
+                            width: 3
+                        }),
+                    })
+                });
+            map.addLayer(vectorLayer); //将绘制层添加到地图容器中
+            history_layers.push(vectorLayer);
+    }
+
+        function addOtherMeshGeneration(pos, value_km, source) {
+
+            var mesh_info = getMeshInfo(pos, value_km);
+
+            var onelon = mesh_info[3][0];
+            var onelat = mesh_info[3][1];
+            var twolon = mesh_info[3][2];
+            var twolat = mesh_info[3][3];
+
+            var coordinate = [[onelon, onelat], [twolon, onelat], [twolon, twolat], [onelon, twolat], [onelon, onelat]];
+
+            var onefeature = drawline(map, coordinate, 'green');
+            source.addFeature(onefeature);
+
+            var lon_add = mesh_info[4][0];
+            var lat_add = mesh_info[4][1];
+            var lon_num = mesh_info[5][0];
+            var lat_num = mesh_info[5][1];
+
+
+            var curlon = onelon;
+            while (lon_num > 0 && curlon < twolon) {
+                coordinate = [[curlon, onelat], [curlon, twolat]];
+                onefeature = drawline(map, coordinate, 'green');
+                source.addFeature(onefeature);
+                curlon += lon_add;
+                lon_num--;
+            }
+
+            var curlat = onelat;
+            while (lat_num > 0 && curlat > twolat) {
+                coordinate = [[onelon, curlat], [twolon, curlat]];
+                onefeature = drawline(map, coordinate, 'green');
+                source.addFeature(onefeature);
+                curlat += lat_add;
+                lat_num--;
+            }
+            map.render();
+
+    }
+
+        function addInteraction() {
+            var interaction_source = new ol.source.Vector();
+          draw = new ol.interaction.Draw({
+            source: interaction_source,
+            type: 'Circle', /** @type {ol.geom.GeometryType} */
+            geometryFunction: ol.interaction.Draw.createBox(),
+            projection:"EPSG:3857"
+          });
+          map.addInteraction(draw);
+          draw.on('drawstart', function(e){
+           //var t = e.feature.getGeometry().getCoordinates()[0];
+              var t = ol.proj.transform(e.feature.getGeometry().getCoordinates()[0][0], "EPSG:3857", "EPSG:4326")
+                onelon = t[0];
+                onelat = t[1];
+
+          });
+          draw.on('drawend', function(e){
+            //var t = e.coordinate;
+           e.feature.getGeometry().setCoordinates(e.feature.getGeometry().getCoordinates());
+           var t = e.feature.getGeometry().getCoordinates()[0];
+           for (var i = 0; i < t.length; i++) {
+               t[i] = ol.proj.transform(t[i], "EPSG:3857", "EPSG:4326")
+               if (t[i][0] != onelon){
+                   twolon = t[i][0];
+               }
+               if (t[i][1] !=  onelat) {
+                   twolat = t[i][1];
+               }
+           }
+
+           var temp;
+           if (onelon > twolon) {
+               temp = onelon;
+               onelon = twolon;
+               twolon = temp;
+           }
+           if (onelat < twolat) {
+               temp = onelat;
+               onelat = twolat;
+               twolat = temp;
+           }
+           onelon = parseFloat((parseInt(onelon/0.1)*0.1).toFixed(2));
+           onelat = parseFloat((parseInt(onelat/0.1)*0.1).toFixed(2));
+           twolon = parseFloat((parseInt(twolon/0.1)*0.1).toFixed(2));
+           twolat = parseFloat((parseInt(twolat/0.1)*0.1).toFixed(2));
+           var polygon_coors = [];
+           polygon_coors.push(ol.proj.transform([onelon, onelat], "EPSG:4326", "EPSG:3857"))
+           polygon_coors.push(ol.proj.transform([twolon, onelat], "EPSG:4326", "EPSG:3857"))
+           polygon_coors.push(ol.proj.transform([twolon, twolat], "EPSG:4326", "EPSG:3857"))
+           polygon_coors.push(ol.proj.transform([onelon, twolat], "EPSG:4326", "EPSG:3857"))
+           polygon_coors.push(ol.proj.transform([onelon, onelat], "EPSG:4326", "EPSG:3857"))
+           e.feature.getGeometry().setCoordinates([polygon_coors]);
+
+
+           interaction_source.clear();
+
+           var value_km = document.getElementById('slider').value;
+           history_poses.push([onelon, onelat, twolon, twolat]);
+           history_precisions.push(value_km);
+           if (twoMeshFlag == '1') {
+               meshGeneration([onelon, onelat, twolon, twolat], value_km);
+               addOtherMeshGeneration([onelon, onelat, twolon, twolat], value_km, history_layers[history_layers.length-1].getSource())
+           }
+           else
+               meshGeneration([onelon, onelat, twolon, twolat], value_km);
+          var data = getTableData(history_numbers, history_poses,history_precisions);
+            $("#area-info-table").bootstrapTable('load', data);
+            updateMapSize();
+
+            obj = document.getElementById("model-select");
+            for(var i=0;i<obj.length;i++){
+                if(obj[i].value=="普通模式") {
+                    obj[i].selected = true;
+                    updateModel();
+                }
+            }
+          });
+    }
+        /* var myCanvas = document.getElementById("myCanvas");
+        var mycontext = myCanvas.getContext("2d");
+        var mygradient = mycontext.createLinearGradient(0,0,myCanvas.width,0);     //创建颜色渐变对象
+        mygradient.addColorStop(0, 'red');
+        mygradient.addColorStop(1, 'white');
+        mycontext.fillStyle = mygradient;                       //把渐变对象赋值给填充类型
+        mycontext.fillRect(0,0,myCanvas.width,myCanvas.height); //绘制图形
+
+        myCanvas = document.getElementById("myCanvas1");
+        mycontext = myCanvas.getContext("2d");
+        mygradient = mycontext.createLinearGradient(0,0,myCanvas.width,0);     //创建颜色渐变对象
+        mygradient.addColorStop(0, 'grey');
+        mygradient.addColorStop(1, 'white');
+        mycontext.fillStyle = mygradient;                       //把渐变对象赋值给填充类型
+        mycontext.fillRect(0,0,myCanvas.width,myCanvas.height); //绘制图形*/
+        function submitEvent() {
+        var layers = map.getLayerGroup().getLayers();
+        if (layers.P.length <= 2) {
+            alert("请绘制目标区域");
+            return;
+        }
+        if (document.getElementById('target_number').value){
+            $.ajax({
+               url : 'target_area/set_area', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {
+                'number': document.getElementById('target_number').value,
+                'start_lon': onelon,
+                'start_lat': onelat,
+                'end_lon': twolon,
+                'end_lat': twolat
+               },
+               dataType : 'json',
+　　　　        success: function(res){
+                   alert(res.status);　　　
+　　　　　　      }
+　            });
+        } else {
+            alert("请输入设置编号");
+        }
+         　　　　　　　　　　　　  　　　　　　  　　　　　　  　　　　　　  　　　　　　  　　　　　　
+    }
+        function clearEvent() {
+            twoMeshFlag = '0';
+
+            for (var j = 0; j < history_layers.length; j++) {
+                map.removeLayer(history_layers[j]);
+            }
+
+            overlay.setPosition(undefined);
+            popupCloser.blur();
+          // alert("clear");
+            history_poses=[];
+            history_layers=[];
+            history_numbers=[];
+            history_precisions=[];
+            var data = getTableData(history_numbers, history_poses,history_precisions);
+                $("#area-info-table").bootstrapTable('load', data);
+        }
+        function showAllWeather() {
+            if (weatherFlag[0] == 1)
+                show_sun();
+            if (weatherFlag[1] == 1)
+                show_thunder()
+            if (weatherFlag[2] == 1)
+                show_day_cloudy()
+            if (weatherFlag[3] == 1)
+                show_day_small_rain()
+            if (weatherFlag[4] == 1)
+                show_small_rain()
+            if (weatherFlag[5] == 1)
+                show_night_rain()
+            if (weatherFlag[6] == 1)
+                show_night_cloudy()
+        }
+        function cancelEvent() {
+        history_poses.pop();
+        history_numbers.pop();
+        history_precisions.pop();
+        var delete_layers = history_layers.pop();
+        map.removeLayer(delete_layers);
+        showAllWeather();
+        var data = getTableData(history_numbers, history_poses,history_precisions);
+            $("#area-info-table").bootstrapTable('load', data);
+    }
+        function getModel(){
+        var myselect = document.getElementById("model-select");
+        var index = myselect.selectedIndex;
+        if (index >= 0)
+            return myselect.options[index].value;
+        return "";
+      }
+        function updateModel(){
+            justChangeModel =1;
+        model = getModel();
+        if (model=="绘制模式") {
+            addInteraction();
+        } else {
+            map.removeInteraction(draw);
+        }
+      }
+        function showNumber(coordinate, number) {
+        var iconFeature = new ol.Feature({
+                //点要素 [116.28, 39.54]
+                geometry: new ol.geom.Point(ol.proj.transform(coordinate ,'EPSG:4326','EPSG:3857'), "XY"),
+                //名称属性
+                name: '编号' + String(number)
+        });
+
+        iconFeature.setStyle(createLabelStyle(iconFeature));
+        return iconFeature;
+    }
+        function addAllLayer(){
+            for (var j = 0; j < history_layers.length ; j++) {
+              map.addLayer(history_layers[j])
+            }
+            if (offshore_layer)
+                map.addLayer(offshore_layer);
+        }
+        function getMinZoom() {
+          var viewport = document.getElementById('map');
+        var width = viewport.clientWidth;
+        return Math.ceil(Math.LOG2E * Math.log(width / 256));
+      }
+
+      function show_offshore() {
+            $.ajax({
+               url : 'target_area/get_offshore_weather_type', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {
+                'area': JSON.stringify([[117.1, 37.1, 122.1, 41.0],
+                    [119.2, 31.4, 126.5, 39.5],
+                    [117.2, 23, 131.1, 33.1],
+                    [105.0, 2.3, 121.5, 23.3]]),
+                'precision' :document.getElementById('slider').value
+               },
+               dataType : 'json',
+　　　　        success: function(res){
+                   /*img_files={1:"thunder.png", 2:"sun.png", 3:"day_cloudy.png", 4:"day_small_rain.png", 5:"night_cloudy.png", 6:"night_rain.png", 7:"small_rain.png"}
+                    for (var key in res){
+                        if (key == 8)
+                            continue;
+                        coordinates=[]
+                        for (var i=0; i < res[key].length; i++)
+                            coordinates.push([parseFloat(res[key][i][0]), parseFloat(res[key][i][1])])
+                        show_weather(coordinates, img_files[key]);
+                    }*/
+                   offshore_layer = show_all_weather(res);
+                   document.getElementById("all-range").style.display="";
+　　　　　　      }
+　            });
+        }
+      function show_all_weather(res) {
+            var pointsSource = new ol.source.Vector({});//start, end
+            img_files={1:"thunder.png", 2:"sun.png", 3:"day_cloudy.png", 4:"day_small_rain.png", 5:"night_cloudy.png", 6:"night_rain.png", 7:"small_rain.png"}
+            for (var key in res){
+                if (key == 8)
+                    continue;
+                coordinates=[]
+                var iconStyle = new ol.style.Style({
+                  image: new ol.style.Icon({
+                      anchor: [0.5, 0.5],
+                      crossOrigin: 'anonymous',
+                      scale:0.06,
+                      src:'/static/img/weather/' +img_files[key]
+                  })
+                });
+                for (var i=0; i < res[key].length; i++) {
+                    coor = [parseFloat(res[key][i][0]), parseFloat(res[key][i][1])]
+                    var map_pos = new ol.Feature({
+                    geometry: new ol.geom.Point(ol.proj.transform(coor ,'EPSG:4326','EPSG:3857')),
+                    name: img_files[key],
+                    });
+                    map_pos.setStyle(iconStyle);
+                    pointsSource.addFeature(map_pos);
+                }
+
+
+            }
+            var vectorPoints = new ol.layer.Vector({
+              source: pointsSource,
+            })
+            map.addLayer(vectorPoints);
+            return vectorPoints;
+      }
+      function show_weather(coordinates, img_file) {
+            var iconStyle = new ol.style.Style({
+              image: new ol.style.Icon({
+                  anchor: [0.5, 0.5],
+                  crossOrigin: 'anonymous',
+                  scale:0.06,
+                  src:'/static/img/weather/' +img_file
+              })
+            });
+
+            var name='thunder';
+            var pointsSource = new ol.source.Vector({});//start, end
+            for (index = 0; index < coordinates.length; index++) {
+                coordinates[index][0] = parseFloat(coordinates[index][0])
+                coordinates[index][1] = parseFloat(coordinates[index][1])
+                var map_pos = new ol.Feature({
+                  geometry: new ol.geom.Point(ol.proj.transform(coordinates[index] ,'EPSG:4326','EPSG:3857')),
+                  name: name,
+                });
+                pointsSource.addFeature(map_pos);
+            }
+            var vectorPoints = new ol.layer.Vector({
+              source: pointsSource,
+              style: iconStyle
+            })
+            map.addLayer(vectorPoints);
+            return vectorPoints;
+      }
+        function show_thunder() {
+            $.ajax({
+               url : 'target_area/get_area_weather_type', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {
+                'type': '1',
+                'area': JSON.stringify(history_poses),
+                'precision' :document.getElementById('slider').value,
+                'twomeshflag': twoMeshFlag
+               },
+               dataType : 'json',
+　　　　        success: function(res){
+                   weatherFlag[1] =1;
+                    weather_name="thunder";
+                    clear_mark(weather_name);
+                    history_weathers[weather_name]['coors'] = res;
+                    coordinates = res;
+                    history_weathers[weather_name]["layer"] = show_weather(coordinates, "thunder.png");　
+　　　　　　      }
+　            });
+        }
+
+        function clear_mark(weather_name) {
+            if (history_weathers[weather_name] && history_weathers[weather_name]['layer']) {
+                map.removeLayer(history_weathers[weather_name]['layer']);
+                delete history_weathers[weather_name]['layer'];
+            }
+            if (history_weathers[weather_name] && history_weathers[weather_name]['coors']) {
+                history_weathers[weather_name]["coors"]=[]
+            }
+            else {
+                history_weathers[weather_name]={}
+                history_weathers[weather_name]["coors"]=[]
+            }
+        }
+
+        function  show_sun() {
+            $.ajax({
+               url : 'target_area/get_area_weather_type', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {
+                'type': '2',
+                'area': JSON.stringify(history_poses),
+                'precision' :document.getElementById('slider').value,
+                'twomeshflag': twoMeshFlag
+               },
+               dataType : 'json',
+　　　　        success: function(res){
+                   weatherFlag[0] =1;
+                    weather_name="sun";
+                    clear_mark(weather_name);
+                    history_weathers[weather_name]['coors'] = res;
+                    coordinates = res;
+                    history_weathers[weather_name]["layer"] = show_weather(coordinates, "sun.png");　
+　　　　　　      }
+　            });
+            /*coordinates = random_coor("sun");
+            history_weathers["sun"]["layer"] = show_weather(coordinates, "sun.png");
+            history_weathers["sun"]["coors"] = coordinates;*/
+        }
+
+        function show_day_cloudy() {
+            $.ajax({
+               url : 'target_area/get_area_weather_type', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {
+                'type': '3',
+                'area': JSON.stringify(history_poses),
+                'precision' :document.getElementById('slider').value,
+                'twomeshflag': twoMeshFlag
+               },
+               dataType : 'json',
+　　　　        success: function(res){
+                   weatherFlag[2] =1;
+                    weather_name="day_cloudy";
+                    clear_mark(weather_name);
+                    history_weathers[weather_name]['coors'] = res;
+                    coordinates = res;
+                    history_weathers[weather_name]["layer"] = show_weather(coordinates, "day_cloudy.png");　
+　　　　　　      }
+　            });
+            /*coordinates = random_coor("day_cloudy");
+            history_weathers["day_cloudy"]["layer"] = show_weather(coordinates, "day_cloudy.png");
+            history_weathers["day_cloudy"]["coors"] = coordinates;*/
+        }
+
+        function show_day_small_rain() {
+            $.ajax({
+               url : 'target_area/get_area_weather_type', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {
+                'type': '4',
+                'area': JSON.stringify(history_poses),
+                'precision' :document.getElementById('slider').value,
+                'twomeshflag': twoMeshFlag
+               },
+               dataType : 'json',
+　　　　        success: function(res){
+                   weatherFlag[3] =1;
+                    weather_name="day_small_rain";
+                    clear_mark(weather_name);
+                    history_weathers[weather_name]['coors'] = res;
+                    coordinates = res;
+                    history_weathers[weather_name]["layer"] = show_weather(coordinates, "day_small_rain.png");　
+　　　　　　      }
+　            });
+            /*coordinates = random_coor("day_small_rain");
+            history_weathers["day_small_rain"]["layer"] = show_weather(coordinates, "day_small_rain.png");
+            history_weathers["day_small_rain"]["coors"] = coordinates;*/
+        }
+
+        function show_night_cloudy() {
+            $.ajax({
+               url : 'target_area/get_area_weather_type', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {
+                'type': '5',
+                'area': JSON.stringify(history_poses),
+                'precision' :document.getElementById('slider').value,
+                'twomeshflag': twoMeshFlag
+               },
+               dataType : 'json',
+　　　　        success: function(res){
+                   weatherFlag[6] =1;
+                    weather_name="night_cloudy";
+                    clear_mark(weather_name);
+                    history_weathers[weather_name]['coors'] = res;
+                    coordinates = res;
+                    history_weathers[weather_name]["layer"] = show_weather(coordinates, "night_cloudy.png");　
+　　　　　　      }
+　            });
+            /*coordinates = random_coor("night_cloudy");
+            history_weathers["night_cloudy"]["layer"] = show_weather(coordinates, "night_cloudy.png");
+            history_weathers["night_cloudy"]["coors"] = coordinates;*/
+        }
+
+        function show_night_rain() {
+            $.ajax({
+               url : 'target_area/get_area_weather_type', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {
+                'type': '6',
+                'area': JSON.stringify(history_poses),
+                'precision' :document.getElementById('slider').value,
+                'twomeshflag': twoMeshFlag
+               },
+               dataType : 'json',
+　　　　        success: function(res){
+                   weatherFlag[5] =1;
+                    weather_name="night_rain";
+                    clear_mark(weather_name);
+                    history_weathers[weather_name]['coors'] = res;
+                    coordinates = res;
+                    history_weathers[weather_name]["layer"] = show_weather(coordinates, "night_rain.png");　
+　　　　　　      }
+　            });
+            /*coordinates = random_coor("night_rain");
+            history_weathers["night_rain"]["layer"] = show_weather(coordinates, "night_rain.png");
+            history_weathers["night_rain"]["coors"] = coordinates;*/
+        }
+
+        function show_small_rain() {
+            $.ajax({
+               url : 'target_area/get_area_weather_type', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {
+                'type': '7',
+                'area': JSON.stringify(history_poses),
+                'precision' :document.getElementById('slider').value,
+                'twomeshflag': twoMeshFlag
+               },
+               dataType : 'json',
+　　　　        success: function(res){
+                   weatherFlag[4] =1;
+                    weather_name="small_rain";
+                    clear_mark(weather_name);
+                    history_weathers[weather_name]['coors'] = res;
+                    coordinates = res;
+                    history_weathers[weather_name]["layer"] = show_weather(coordinates, "small_rain.png");　
+　　　　　　      }
+　            });
+            /*
+            coordinates = random_coor("small_rain");
+            history_weathers["small_rain"]["layer"] = show_weather(coordinates, "small_rain.png");
+            history_weathers["small_rain"]["coors"] = coordinates;*/
+        }
+
+
+        function  random_coor(weather_name) {
+            if (history_weathers[weather_name] && history_weathers[weather_name]['layer']) {
+                map.removeLayer(history_weathers[weather_name]['layer']);
+                delete history_weathers[weather_name]['layer'];
+            }
+            if (history_weathers[weather_name] && history_weathers[weather_name]['coors']) {
+                history_weathers[weather_name]["coors"]=[]
+            }
+            else {
+                history_weathers[weather_name]={}
+                history_weathers[weather_name]["coors"]=[]
+            }
+            var sum_num = 0;
+            for (index = 0; index < history_poses.length; index++) {
+                sum_num = 0;
+                var onelon = history_poses[index][0];
+                var onelat = history_poses[index][1];
+                var twolon = history_poses[index][2];
+                var twolat = history_poses[index][3];
+                precision_v = history_precisions[index];
+
+                var lon_add = history_real_precisions[index][0]
+                var lat_add = history_real_precisions[index][1]
+                var lon_num = history_real_num[index][0]
+                var lat_num = history_real_num[index][1]
+                for (j = 0; j < lon_num*lat_num; j++) {
+                    var contain_flag = 0
+                    if(sum_num ==10)
+                        break;
+                    coor_random = [onelon + Math.floor(Math.random()*(lon_num))*lon_add + lon_add/2,
+                    onelat + Math.floor(Math.random()*(lat_num))*lat_add + lat_add/2];
+                    for (var m in history_weathers) {
+                        coordinates = history_weathers[m]['coors'];
+                        for (k = 0; k < coordinates.length; k++) {
+                            if (coordinates[k][0] == coor_random[0] && coordinates[k][1] == coor_random[1]){
+                                contain_flag =1;
+                                break;
+                            }
+                        }
+                    }
+                    if (contain_flag==0) {
+                        history_weathers[weather_name]['coors'].push(coor_random);
+                        sum_num+=1;
+                    }
+                }
+
+            }
+            return history_weathers[weather_name]['coors'];
+        }
+
+
+        window.onload = function () {
+        //实例化全屏显示控件
+        var fullScreenControl = new ol.control.FullScreen();
+        map.addControl(fullScreenControl);
+        }
+
+        function updateMapSize() {
+            $('.col-md-8').css('height', $('.col-md-4').height());
+            var printSize = [$('.col-md-8').width(), $('.col-md-4').height()];
+            map.setSize(printSize);
+        }
+    </script>
+</body>
+</html>

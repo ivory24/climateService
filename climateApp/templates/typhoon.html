@@ -1,0 +1,2240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="http://cdn.bootcss.com/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet">
+
+    {% load static %}
+    <link href="{% static 'bootstrap\css\bootstrap.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'bootstrap\css\bootstrap.min.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'bootstrap-table\bootstrap-table.css' %}" rel="stylesheet" type="text/css">
+
+    <script type="text/javascript" src="{% static 'jquery/jquery-3.3.1.js' %}"></script>
+    <script type="text/javascript" src="{% static 'jquery/jquery-3.3.1.min.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap-table/bootstrap-table.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap-table/bootstrap-table-zh-CN.js' %}"></script>
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <script src="{% static 'openlayers\openlayers_v4.5.0_ol.js' %}" type="text/javascript"></script>
+
+    <script src="https://img.hcharts.cn/highcharts/highcharts.js"></script>
+	<script src="https://img.hcharts.cn/highcharts/modules/exporting.js"></script>
+	<script src="https://img.hcharts.cn/highcharts/modules/xrange.js"></script>
+	<script src="https://img.hcharts.cn/highcharts/modules/oldie.js"></script>
+
+    <script src="https://unpkg.com/jsts@2.0.2/dist/jsts.min.js"></script>
+
+
+    <title>台风预警</title>
+    <link rel="stylesheet" href="{% static 'openlayers\openlayers_v4.5.0_ol.css' %}" type="text/css">
+    <style type="text/css" xmlns="http://www.w3.org/1999/xhtml"></style>
+
+   <style>
+     #container {
+        min-width: 300px;
+        max-width: 800px;
+        height: 300px;
+        margin: 2em auto;
+     }
+     .map {
+         position: relative;
+         height: 100%;
+       width: 100%;
+         top:0px
+     }
+     .sea-map-label {
+    position: absolute;
+    top: 10px;
+    right: 170px;
+    border: 1px;
+    border-color: #333;
+    background-color: #339999;
+    color: #fff;
+    box-shadow: 0px 0px 2px #666;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:80px;
+         text-align: center;
+    }
+     .star-map-label {
+    position: absolute;
+    top: 10px;
+    right: 90px;
+    border: 1px;
+    border-color: #333;
+    background-color: #339999;
+    color: #fff;
+    box-shadow: 0px 0px 2px #666;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:80px;
+         text-align: center;
+    }
+     .map-label {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border: 1px;
+    border-color: #333;
+    background-color: #339999;
+    color: #fff;
+    box-shadow: 0px 0px 2px #666;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:80px;
+         text-align: center;
+    }
+     .left-precision-label {
+         position: absolute;
+    top: 40px;
+    right: 150px;
+    color: #fff;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:100px;
+         text-align: right;
+         color: #0f0f0f;
+     }
+     .right-precision-label {
+         position: absolute;
+    top: 40px;
+    right: 40px;
+    color: #fff;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:50px;
+         text-align: left;
+         color: #0f0f0f;
+     }
+     .rangeContainer {
+         position: absolute;
+         top: 40px;
+         right: 100px;
+         cursor: pointer;
+         width: 50px;
+
+     }
+     .typhoon-legend-text1 {
+         position: absolute;
+         bottom: 50px;
+         cursor: pointer;
+         right: 10px;
+         width: 70px;
+     }
+     .typhoon-legend-line1 {
+         position: absolute;
+         bottom: 35px;
+         cursor: pointer;
+         right: 80px;
+         width: 50px;
+     }
+     .typhoon-legend-text2 {
+         position: absolute;
+         bottom: 30px;
+         cursor: pointer;
+         right: 10px;
+         width: 70px;
+     }
+     .typhoon-legend-line2 {
+         position: absolute;
+         bottom: 15px;
+         cursor: pointer;
+         right: 80px;
+         width: 50px;
+     }
+       .row-eq-height{
+        display: flex;
+       }
+     body {
+            position: relative;
+            left: 0;
+            padding: 0;
+            margin: 0;
+            overflow-x:hidden;
+        }
+
+        aside {
+            position: fixed;
+            left: 0;
+            top: 50px;
+            width:400px;
+            background: skyblue;
+            transition: right 2s ease;
+        }
+        .legend{
+        position: absolute;
+        top: 40px;
+        right: 0px;
+	    }
+
+        #btn {
+            position: absolute;
+            top: 0px;
+            right: 398px;
+            height: 50px;
+            width: 10px;
+            border: 0;
+            border-left: 1px solid rgb(23, 32, 43);
+            background: #15A6EA;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .open {
+            right: 0px;
+        }
+
+        .close {
+            right: -400px;
+        }
+   </style>
+</head>
+
+<body>
+    <div class="container-fluid" style="height: 100%">
+        <div class="row">
+           <div class="nav navbar-header navbar-left">
+               <a class="navbar-brand">CSSC</a>
+           </div>
+            <div class="nav navbar-nav navbar-right" >
+                <li><a href="/home">首页</a></li>
+                <li><a href="/seaway">航线气象</a></li>
+                <li><a href="/typhoon">台风预警</a></li>
+                <li><a href="/ship">船只气象</a></li>
+                <li><a href="/area">目标区域气象</a></li>
+                <li>
+                    <select style="margin-top: 12px; color: #000;" onchange="changeSystem()" id="system-select">
+                        <option value="transfer">江海联运</option>
+                        <option value="manage">海事监管</option>
+                        <option selected="selected" value="weather">精细化气象</option>
+                        <option value="ecology">海岸线生态</option>
+                    </select>
+                </li>
+                <!--<li><a><span class="glyphicon glyphicon-user"></span></a></li>
+                <li><a>admin</a></li>-->
+                <li><a><span class="glyphicon glyphicon-log-out" style="margin-right: 20px" onclick="logout()"></span></a></li>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+
+                           <form>
+                               当前台风
+                                <select class="bg-primary" id="typhoon_info" onchange="updateInfo()">
+                                </select>
+                           </form>
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                        <table class="bootstrap-table" border="1" align="center" id="typhoon">
+
+                       </table>
+                    </div>
+                </div>
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <!--; color: #0f0f0f; background-color: #437ab2-->
+                            <!--台风<input id="search-radius"  class="bg-primary" type="number" placeholder="100-1000" min="100" max="1000"  style="width:100px; margin-left:2px; margin-right:2px
+                            ; border: 1px solid #a6a6a6; border-radius: 5px; height: 25px" onkeypress="getShipRroundTyphoon();"/>公里范围内-->船只统计
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                        <table class="bootstrap-table" border="1" align="center" id="ship-table">
+                       </table>
+                    </div>
+                </div>
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <form>
+                               历史台风信息
+                                <select class="bg-primary" id="history_typhoon_name" onchange="updateHTInfo()">
+                                </select>
+                           </form>
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                        <div id="container" style="height: 400px"></div>
+                        <!--<span style="color:#FF0000">台风天气预警</span>
+                        <p id="typhoon_warning"></p>-->
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <!-- loop=3 -->
+                <marquee  id= "warning" direction=left behavior=scroll  scrollamount=1 scrolldelay=10 align=top bgcolor=#ffffff top=5 width=100% hspace=10 vspace=0 height=20 onmouseover=this.stop() onmouseout=this.start()></marquee>
+                <div id="map" class="map" style="width: 100%; height: 100%;"></div>
+                   <!---<div class="dropdown">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                        出发地
+                        <span class="caret"></span>
+                    </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a>出发地1</a></li>
+                            <li><a>出发地2</a></li>
+                        </ul>
+                    </div>
+                <div class="dropdown">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                        目的地
+                        <span class="caret"></span>
+                    </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a>目的地1</a></li>
+                            <li><a>目的地2</a></li>
+                        </ul>
+                    </div>--->
+
+            </div>
+                <!--<aside id="aside" class="close">
+        <button id="btn" onclick="toggle()">
+            三
+        </button>
+        <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+
+                           <form>
+                               历史台风信息
+                                <select class="bg-primary" id="history_typhoon_name" onchange="updateHTInfo()">
+                                </select>
+                           </form>
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                        <table class="bootstrap-table" border="1" align="center" id="history_typhoon_info">
+
+                       </table>
+                    </div>
+                </div>
+    </aside>-->
+
+        </div>
+    </div>
+    <script type="text/javascript">
+        function logout(){
+            delCookie("token");
+            window.location.href="http://218.205.125.100/jfinal_sso/member/logout";
+        }
+        function getCookie(name)
+        {
+            var arr,reg=new RegExp("(^| )"+name+"=([^;]*)(;|$)");
+            if(arr=document.cookie.match(reg))
+                return unescape(arr[2]);
+            else
+                return null;
+        }
+        function delCookie(name)
+        {
+            var exp = new Date();
+            exp.setTime(exp.getTime() - 1);
+            var cval=getCookie(name);
+            if(cval!=null)
+                document.cookie= name + "="+cval+";expires="+exp.toGMTString();
+        }
+
+        function changeSystem() {
+            var systemName = $('select  option:selected').val();
+            if (systemName == "transfer") {
+                window.location.href="http://218.205.125.144:9620" + "?" + document.cookie;
+            } else if (systemName == "manage") {
+                window.location.href="http://218.205.125.144:9630" + "?" + document.cookie;
+            } else if (systemName == "weather") {
+                window.location.href="http://218.205.125.147:8002/home" + "?" + document.cookie;
+            } else {
+                window.location.href="http://218.205.125.141:8090/zsngweb" + "?" + document.cookie;
+            }
+
+        }
+            //$('.dropdown-toggle').dropdown();
+        var mapView = new ol.View({
+            //projection: "EPSG:4326",//地图坐标参考系
+            //extent: [105, 0, 135, 40],
+             //center: ol.proj.transform( [120.00,20.00] ,'EPSG:4326','EPSG:3857'),
+                minZoom: getMinZoom(),
+             //zoom: 3,
+            center: ol.proj.transform( [112,27] ,'EPSG:4326','EPSG:3857'),
+            zoom: 3.8,
+        });
+        var mapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               //url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+               url: 'http://218.205.125.142:8001/{z}/{x}/{y}.png'
+               //projection:ol.proj.get('EPSG:4326')
+               //url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+           })
+        });
+        var map = new ol.Map({
+             target: 'map',
+             layers: [mapLayer],
+           //projection: new ol.proj("EPSG:4326"),
+           //displayProjection: new ol.proj("EPSG:4326"),
+             view:mapView
+        });
+        var line1Layer;
+        var line2Layer;
+        var circleLayer;
+        var point1Layer;
+        var circle_ship_layer;
+        var id;
+        var passed=[];
+        var unpassed =[];
+        var pos=[];
+        var history_layers=[]
+        var history_layer_flag = false;
+
+        var cicle_ships=[]
+        var shipdata = {{all_ships|safe}};
+        var ship_layer =  showAllShips(1);
+        var cur_zoom = map.getView().getZoom();
+
+        var passedFeature;
+
+        var radius = []
+        /*for (var i = 0; i < index; i++) {
+            radius.push(Math.random()>0.5?100:450);
+        }*/
+
+        var data = JSON.parse(JSON.stringify({{all_typhoon|safe}}));
+        if (data.length > 0)
+          deleteOption(0,"history_typhoon_name");
+        addOption("所有台风","history_typhoon_name");
+        for (x in data) {
+           addOption(data[x],"history_typhoon_name");
+        }
+        /*var webWidth = document.documentElement.scrollWidth || document.body.scrollWidth;
+        var aside = document.getElementById("aside")*/
+        $('.dropdown-toggle').dropdown();
+        //showTyphoonWarning();　
+        var createLabelStyle = function (feature) {
+                //返回一个样式
+        return new ol.style.Style({
+             //文本样式
+                    text: new ol.style.Text({
+                        offsetX:0,
+                        //对齐方式
+                        textAlign: 'center',
+                        //文本基线
+                        textBaseline: 'middle',
+                        //字体样式
+                        font: 'normal 10px 微软雅黑',
+                        //文本内容
+                        text: feature.get('name'),
+                        //填充样式
+                        fill: new ol.style.Fill({
+                            color: '#aa3300'
+                        }),
+                        //笔触
+                        stroke: new ol.style.Stroke({
+                            color: '#ffcc33',
+                            width: 2
+                        })
+                    }),
+            zIndex:20
+                });
+    };
+
+        var data = JSON.parse(JSON.stringify({{current_typhoon|safe}}));
+        if (data.length > 0) {
+                deleteOption(0, "typhoon_info");
+                for (x in data) {
+                    addOption(data[x], "typhoon_info");
+                }
+                //alert(parseName("typhoon_info"));
+                /*$.ajax({
+                    url: 'typhoon/get_path_info',
+                    type: 'post',
+                    data: {
+                        'typhoon_name': parseName("typhoon_info"),
+                    },
+                    dataType: 'json',
+                    success: function (data) {
+                        console.log(data);
+                        passed = data["passed"];
+                        unpassed = data["unpassed"];
+                        pos = data["current_pos"][0];
+                        //alert(passed);
+                        if (passed.length > 0) {
+                            mapView.setCenter(ol.proj.transform([parseFloat(pos[0]), parseFloat(pos[1])], 'EPSG:4326', 'EPSG:3857'));
+                            map.render();
+                            line1Layer = drawline(map, passed, 'dodgerblue');
+                            line2Layer = drawline(map, unpassed, 'yellow');
+                            point1Layer = drawPoint(map, data["path"], "orange");
+                            circleLayer = drawCircle(map, pos);
+                            $('.col-md-8').css('height', $('.col-md-4').height())
+                            map.render()
+                        }
+                    }
+                });*/
+            }
+
+        $(document).ready(function() {
+            var viewport = map.getViewport();
+            $(viewport).append(
+                //'<div class="left-precision-label">精度5km*5km</div>' +
+           //'<div class="right-precision-label">10km*10km</div>' +
+           //'<div class="rangeContainer"><input id="slider" type="range" min="5" max="10" step="5" value="5" class="rangebar"/></div>' +
+           '<div id="sea-map-label" class="sea-map-label">海图</div>' +
+           '<div id="star-map-label" class="star-map-label">卫星图</div>' +
+           '<div id="map-label" class="map-label">地图</div>' +
+           '<div class="legend"><img src="/static/img/ship_legend.jpg" height="120" width="120"/></div>' +
+           '<div class="typhoon-legend"><div class="typhoon-legend-text1"><span>已经过路径</span></div>' +
+           '<div class="typhoon-legend-line1"><hr style="height:3px;border:none;border-top:3px ridge dodgerblue;" /></div>' +
+           '<div class="typhoon-legend-text2"><span>预测路径</span></div>' +
+           '<div class="typhoon-legend-line2"><hr style="height:3px;border:none;border-top:3px ridge yellow;" /></div></div>');
+            document.getElementById('sea-map-label').onclick = function() {
+                  //map.removeLayer(mapLayer);
+                  //map.addLayer(openSeaMapLayer);
+                  var newmapLayer = new ol.layer.Tile({
+                      source: new ol.source.XYZ({
+                          //url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                          //url: 'http://124.193.165.122:8083/{z}/{x}/{y}.png'
+                          url: 'http://218.205.125.142:8001/{z}/{x}/{y}.png'
+                          //url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+                      })
+                  });
+                  var layers = map.getLayerGroup().getLayers();
+                  layers.clear();
+                  map.removeLayer(mapLayer);
+                  map.addLayer(newmapLayer);
+                  if (circle_ship_layer)
+                      map.addLayer(circle_ship_layer)
+                  showTyphoonLine();
+                  addAllLayer();
+            }
+            document.getElementById('star-map-label').onclick = function() {
+                  var newmapLayer = new ol.layer.Tile({
+                   source: new ol.source.XYZ({
+                       //url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                         //url: 'http://124.193.165.122:8083/{z}/{x}/{y}.png'
+                       url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+                   })
+                 });
+                  var layers = map.getLayerGroup().getLayers();
+                layers.clear();
+                  map.removeLayer(mapLayer);
+                  map.addLayer(newmapLayer);
+                  if (circle_ship_layer)
+                      map.addLayer(circle_ship_layer)
+                  showTyphoonLine();
+                  addAllLayer();
+              }
+            document.getElementById('map-label').onclick = function() {
+                  var newmapLayer = new ol.layer.Tile({
+                   source: new ol.source.XYZ({
+                       url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                         //url: 'http://124.193.165.122:8083/{z}/{x}/{y}.png'
+                       //url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+                   })
+                 });
+                  var layers = map.getLayerGroup().getLayers();
+                layers.clear();
+                  map.removeLayer(mapLayer);
+                  map.addLayer(newmapLayer);
+                  if (circle_ship_layer)
+                      map.addLayer(circle_ship_layer)
+                  showTyphoonLine();
+                  addAllLayer();
+            }
+            /*document.getElementById('slider').onclick = function () {
+               alert(document.getElementById('slider').value);
+            }*/
+
+            updateInfo();
+      });
+
+
+        $("#typhoon").bootstrapTable({
+
+            url: '/typhoon/get_typhoon_info',         //请求后台的URL（*）
+            method: 'post',                      //请求方式（*）
+            striped: true,                      //是否显示行间隔色
+            cache: true,                       //是否使用缓存，默认为true，所以一般情况下需要设置一下这个属性（*）
+            pagination: true,                   //是否显示分页（*）
+            sortable: false,                     //是否启用排序
+            sortOrder: "asc",                   //排序方式
+            //queryParams: queryParams,//传递参数（*）
+            sidePagination: "server",           //分页方式：client客户端分页，server服务端分页（*）
+            pageNumber:1,                       //初始化加载第一页，默认第一页
+            pageSize: 5,                       //每页的记录行数（*）
+            pageList: [],        //可供选择的每页的行数（*）
+            search: false,                       //是否显示表格搜索，此搜索是客户端搜索，不会进服务端，所以，个人感觉意义不大
+            strictSearch: false,
+            showColumns: false,                  //是否显示所有的列
+            showRefresh: false,                  //是否显示刷新按钮
+            minimumCountColumns: 2,             //最少允许的列数
+            clickToSelect: true,                //是否启用点击选中行
+            //height: 300,                        //行高，如果没有设置height属性，表格自动根据记录条数觉得表格高度
+            uniqueId: "ID",                     //每一行的唯一标识，一般为主键列
+            showToggle:false,                    //是否显示详细视图和列表视图的切换按钮
+            cardView: false,                    //是否显示详细视图
+            detailView: false,                   //是否显示父子表
+            columns: [
+            {
+                field: 'data_time',
+                title: '时间',
+                align:'center',
+            },
+            {
+                field: 'pressure',
+                title: '气压',
+                 align:'center',
+            },
+            {
+                field: 'strength_grade',
+                title: '风力',
+                align:'center',
+            },
+            {
+                field: 'wind_speed',
+                title: '移速',
+                 align:'center',
+            },
+            ],
+
+            responseHandler:function(res) {
+            if (res == 0) {
+                alert("typhoon error");
+            } else {
+                var data = res['rows'];
+                return res;
+            }
+            },
+            onLoadError:function(status) {
+            console.log("^^^^^^^^^^^^^^^^^^");
+            console.log(status);
+            //alert("error");
+            },
+            onLoadSuccess:function(data) {
+                console.log(status);
+                updateMapSize();
+            },
+            queryParams:function(params){
+                var t = getTyphoonName("typhoon_info");
+                var temp = {
+                    typhoon_name:t,
+                    pageSize:params.limit,
+                    offset:params.offset
+                };
+                return temp;
+            }
+       });
+        $("#history_typhoon_info").bootstrapTable({
+
+            url: '/typhoon/get_typhoon_all_info',         //请求后台的URL（*）
+            method: 'post',                      //请求方式（*）
+            striped: true,                      //是否显示行间隔色
+            cache: true,                       //是否使用缓存，默认为true，所以一般情况下需要设置一下这个属性（*）
+            pagination: true,                   //是否显示分页（*）
+            sortable: false,                     //是否启用排序
+            sortOrder: "asc",                   //排序方式
+            //queryParams: queryParams,//传递参数（*）
+            sidePagination: "server",           //分页方式：client客户端分页，server服务端分页（*）
+            pageNumber:1,                       //初始化加载第一页，默认第一页
+            pageSize: 5,                       //每页的记录行数（*）
+            pageList: [],        //可供选择的每页的行数（*）
+            search: false,                       //是否显示表格搜索，此搜索是客户端搜索，不会进服务端，所以，个人感觉意义不大
+            strictSearch: false,
+            showColumns: false,                  //是否显示所有的列
+            showRefresh: false,                  //是否显示刷新按钮
+            minimumCountColumns: 2,             //最少允许的列数
+            clickToSelect: true,                //是否启用点击选中行
+            //height: 300,                        //行高，如果没有设置height属性，表格自动根据记录条数觉得表格高度
+            uniqueId: "ID",                     //每一行的唯一标识，一般为主键列
+            showToggle:false,                    //是否显示详细视图和列表视图的切换按钮
+            cardView: false,                    //是否显示详细视图
+            detailView: false,                   //是否显示父子表
+            columns: [
+            {
+                field: 'data_time',
+                title: '时间',
+                align:'center',
+            },
+            {
+                field: 'pressure',
+                title: '气压',
+                 align:'center',
+            },
+            {
+                field: 'strength_grade',
+                title: '风力',
+                align:'center',
+            },
+            {
+                field: 'wind_speed',
+                title: '移速',
+                 align:'center',
+            },
+            ],
+
+            responseHandler:function(res) {
+            if (res == 0) {
+                alert("typhoon error");
+            } else {
+                var data = res['rows'];
+                return res;
+            }
+            },
+            onLoadError:function(status) {
+            console.log("^^^^^^^^^^^^^^^^^^");
+            console.log(status);
+            //alert("error");
+            },
+            onLoadSuccess:function(data) {
+            console.log(status);
+            updateMapSize();
+            },
+            queryParams:function(params){
+                var t = getTyphoonName("history_typhoon_name");
+                var temp = {
+                    typhoon_name:t,
+                    pageSize:params.limit,
+                    offset:params.offset
+                };
+                return temp;
+            }
+      });
+        $("#ship-table").bootstrapTable({
+
+            url: '/typhoon/get_ship_table_info',         //请求后台的URL（*）
+            method: 'post',                      //请求方式（*）
+            striped: true,                      //是否显示行间隔色
+            cache: true,                       //是否使用缓存，默认为true，所以一般情况下需要设置一下这个属性（*）
+            pagination: true,                   //是否显示分页（*）
+            sortable: false,                     //是否启用排序
+            sortOrder: "asc",                   //排序方式
+            //queryParams: queryParams,//传递参数（*）
+            sidePagination: "server",           //分页方式：client客户端分页，server服务端分页（*）
+            pageNumber:1,                       //初始化加载第一页，默认第一页
+            pageSize: 5,                       //每页的记录行数（*）
+            pageList: [],        //可供选择的每页的行数（*）
+            search: false,                       //是否显示表格搜索，此搜索是客户端搜索，不会进服务端，所以，个人感觉意义不大
+            strictSearch: false,
+            showColumns: false,                  //是否显示所有的列
+            showRefresh: false,                  //是否显示刷新按钮
+            minimumCountColumns: 2,             //最少允许的列数
+            clickToSelect: true,                //是否启用点击选中行
+            //height: 300,                        //行高，如果没有设置height属性，表格自动根据记录条数觉得表格高度
+            uniqueId: "ID",                     //每一行的唯一标识，一般为主键列
+            showToggle:false,                    //是否显示详细视图和列表视图的切换按钮
+            cardView: false,                    //是否显示详细视图
+            detailView: false,                   //是否显示父子表
+            columns: [
+            {
+                field: 'name',
+                title: '船名',
+                align:'center',
+            },
+            {
+                field: 'mmsi',
+                title: 'MMSI',
+                 align:'center',
+            },
+            {
+                field: 'callsign',
+                title: '呼号',
+                align:'center',
+            },
+            {
+                field: 'ship_type',
+                title: '船舶类型',
+                 align:'center',
+            }, {
+                field: 'distance',
+                title: '距离',
+                 align:'center',
+            }
+            ],
+
+            responseHandler:function(res) {
+            if (res == 0) {
+                alert("ship-table error");
+            } else {
+                showShipCircle();
+                var data = res['rows'];
+                return res;
+            }
+            },
+            onLoadError:function(status) {
+            console.log("^^^^^^^^^^^^^^^^^^");
+            console.log(status);
+            //alert("ship-table error");
+            },
+            onLoadSuccess:function(data) {
+            console.log(status);
+            updateMapSize();
+            },
+            queryParams:function(params){
+                var temp = {
+                    pageSize:params.limit,
+                    offset:params.offset,
+                    centerPos:pos,
+                    radius: 450  //document.getElementById("search-radius").value
+
+                };
+                return temp;
+            }
+      });
+
+        function updateHTInfo() {
+            if(circle_ship_layer) {
+                map.removeLayer(circle_ship_layer);
+                circle_ship_layer=null;
+            }
+
+            if (getTyphoonName("history_typhoon_name")=="所有台风") {
+                showHistoryTyphoonChart();
+                return;
+            }
+            $.ajax({
+               url : 'typhoon/get_history_path_info', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {　　　　　　　　　　　
+　　　　　　　　 'typhoon_name' : parseName("history_typhoon_name"),　　　　　　　
+　　　　　　  },
+　　　　        dataType : 'json',
+　　　　        success: function(data){　　　
+　　　　　　      console.log(data);
+                passed = data["passed"];
+                unpassed = data["unpassed"];
+                pos = data["current_pos"][0];　
+                radius = data["radius"];
+                removeAllLayer();
+                history_layers=[]
+                history_layer_flag = true;
+                window.clearInterval(id);
+                mapView.setCenter(ol.proj.transform([parseFloat(pos[0]),parseFloat(pos[1])],'EPSG:4326','EPSG:3857'));
+                map.render();
+
+                var strengths = data["strengths"];
+                var strength_infos = data["strength_infos"];
+                var strength_cn = {0:'未达到热带低压', 1:'热带低压', 2:'热带风暴', 3:'强热带风暴', 4:'台风形成', 5:'强台风', 6:'超强台风', 9:'变性气旋'}
+                var chart_data=[];
+                for (var i = 0; i < strengths.length; i++) {
+                    radius[i] = parseInt(radius[i]);
+                    var one_chart_data={};
+                    one_chart_data['y'] = parseInt(strengths[i]);
+                    one_chart_data['z'] = strength_cn[one_chart_data['y']];
+                    dd = dateadd(strength_infos[i][0], 0)
+                    dd1 = dateadd(strength_infos[i][1], 0)
+                    one_chart_data['x'] = Date.UTC(dd.getFullYear(), dd.getMonth()+1, dd.getDate(),
+                        dd.getHours(), dd.getMinutes(), dd.getSeconds());
+                    one_chart_data['x2'] = Date.UTC(dd1.getFullYear(), dd1.getMonth()+1, dd1.getDate(),
+                        dd1.getHours(), dd1.getMinutes(), dd1.getSeconds());
+                    chart_data.push(one_chart_data);
+                }
+                showOneTyphoonChart(parseName("history_typhoon_name"), chart_data);
+                updateMapSize();
+
+
+                var moveFeature = function(event) {
+                    if (animating) {
+                        var elapsedTime = new Date().getTime() - now;
+                // here the trick to increase speed is to jump some indexes
+                        // on lineString coordinates
+                        index = Math.round(elapsedTime / 1000);
+
+                        if (index >= passed.length) {
+                            stopAnimation(true);
+                            return;
+                        }
+                        //window.clearInterval(id);
+                    // tell OpenLayers to continue the postcompose animation
+                        //drawCircle(map, passed[index]);
+                        if (circleLayer) {
+                            map.removeLayer(circleLayer);
+                            circleLayer = drawCirclePoint(map, passed[index], "white");
+                            history_layers.push(drawOnePoint(map, passed[index], data["point_color"][index]));
+                            if (index > 2) {
+                                map.removeLayer(circle_ship_layer);
+                                circle_ship_layer = drawShipCircle(index);
+                                map.addLayer(circle_ship_layer)
+                            }
+
+                        } else {
+                            circleLayer = drawCirclePoint(map, passed[index], "white");
+                            circle_ship_layer = drawShipCircle(2);
+                            map.addLayer(circle_ship_layer)
+                        }
+
+                    }
+
+                     map.render();
+                };
+                function stopAnimation(ended) {
+                    map.removeLayer(circle_ship_layer);
+                    circle_ship_layer = drawShipCircle(passed.length);
+                    map.addLayer(circle_ship_layer)
+                    animating = false;
+                    //circleLayer = drawCircle(map, passed[passed.length-1]);
+                    history_layers.push(circleLayer);
+                    map.un('postcompose', moveFeature);
+                }
+
+
+                var now = new Date().getTime();
+                line1Layer = drawline(map,passed,'dodgerblue');
+
+                var animating = true;
+                map.on('postcompose', moveFeature);
+                map.render();
+
+
+                //$("#history_typhoon_info").bootstrapTable('refresh');
+                updateMapSize();
+　　　　　　  }
+
+　　　　    });
+        }
+        function updateHTInfoByClick(name) {
+            if(circle_ship_layer) {
+                map.removeLayer(circle_ship_layer);
+                circle_ship_layer=null;
+            }
+
+            var index = name.indexOf(' ');
+            typhoon_name_h = name.substr(index+1);
+            $.ajax({
+               url : 'typhoon/get_history_path_info', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {　　　　　　　　　　　
+　　　　　　　　 'typhoon_name' : typhoon_name_h,　　　　　　　
+　　　　　　  },
+　　　　        dataType : 'json',
+　　　　        success: function(data){　　　
+　　　　　　      console.log(data);
+                passed = data["passed"];
+                unpassed = data["unpassed"];
+                pos = data["current_pos"][0];　
+                radius = data["radius"];
+                removeAllLayer();
+                history_layers=[]
+                history_layer_flag = true;
+                window.clearInterval(id);
+                mapView.setCenter(ol.proj.transform([parseFloat(pos[0]),parseFloat(pos[1])],'EPSG:4326','EPSG:3857'));
+                map.render();
+
+                var strengths = data["strengths"];
+                var strength_infos = data["strength_infos"];
+                var strength_cn = {0:'未达到热带低压', 1:'热带低压', 2:'热带风暴', 3:'强热带风暴', 4:'台风形成', 5:'强台风', 6:'超强台风', 9:'变性气旋'}
+                var chart_data=[];
+                for (var i = 0; i < strengths.length; i++) {
+                    radius[i] = parseInt(radius[i]);
+                    var one_chart_data={};
+                    one_chart_data['y'] = parseInt(strengths[i]);
+                    one_chart_data['z'] = strength_cn[one_chart_data['y']];
+                    dd = dateadd(strength_infos[i][0], 0)
+                    dd1 = dateadd(strength_infos[i][1], 0)
+                    one_chart_data['x'] = Date.UTC(dd.getFullYear(), dd.getMonth()+1, dd.getDate(),
+                        dd.getHours(), dd.getMinutes(), dd.getSeconds());
+                    one_chart_data['x2'] = Date.UTC(dd1.getFullYear(), dd1.getMonth()+1, dd1.getDate(),
+                        dd1.getHours(), dd1.getMinutes(), dd1.getSeconds());
+                    chart_data.push(one_chart_data);
+                }
+                showOneTyphoonChart(typhoon_name_h, chart_data);
+                document.getElementById("history_typhoon_name").value=data['info'];
+                updateMapSize();　
+
+
+                var moveFeature = function(event) {
+                    if (animating) {
+                        var elapsedTime = new Date().getTime() - now;
+                // here the trick to increase speed is to jump some indexes
+                        // on lineString coordinates
+                        index = Math.round(elapsedTime / 1000);
+
+                        if (index >= passed.length) {
+                            stopAnimation(true);
+                            return;
+                        }
+                        //window.clearInterval(id);
+                    // tell OpenLayers to continue the postcompose animation
+                        //drawCircle(map, passed[index]);
+                        if (circleLayer) {
+                            map.removeLayer(circleLayer);
+                            circleLayer = drawCirclePoint(map, passed[index], "white");
+                            history_layers.push(drawOnePoint(map, passed[index], data["point_color"][index]));
+                            if (index > 2) {
+                                map.removeLayer(circle_ship_layer);
+                                circle_ship_layer = drawShipCircle(index);
+                                map.addLayer(circle_ship_layer)
+                            }
+
+                        } else {
+                            circleLayer = drawCirclePoint(map, passed[index], "white");
+                            circle_ship_layer = drawShipCircle(2);
+                            map.addLayer(circle_ship_layer)
+                        }
+
+                    }
+
+                     map.render();
+                };
+                function stopAnimation(ended) {
+                    map.removeLayer(circle_ship_layer);
+                    circle_ship_layer = drawShipCircle(passed.length);
+                    map.addLayer(circle_ship_layer)
+                    animating = false;
+                    //circleLayer = drawCircle(map, passed[passed.length-1]);
+                    history_layers.push(circleLayer);
+                    map.un('postcompose', moveFeature);
+                }
+
+
+                var now = new Date().getTime();
+                line1Layer = drawline(map,passed,'dodgerblue');
+
+                var animating = true;
+                map.on('postcompose', moveFeature);
+                map.render();
+
+
+                //$("#history_typhoon_info").bootstrapTable('refresh');
+                updateMapSize();
+　　　　　　  }
+
+　　　　    });
+        }
+        function updateInfo() {
+            if(circle_ship_layer) {
+                map.removeLayer(circle_ship_layer);
+                circle_ship_layer=null;
+            }
+            $.ajax({
+               url : 'typhoon/get_history_path_info', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {　　　　　　　　　　　
+　　　　　　　　 'typhoon_name' : parseName("typhoon_info"),　　　　　　　
+　　　　　　  },
+　　　　        dataType : 'json',
+　　　　        success: function(data){　　　
+　　　　　　      console.log(data);
+                passed = data["passed"];
+                unpassed = data["unpassed"];
+                pos = data["current_pos"][0];　
+                radius = data["radius"];
+                for (var i = 0; i < radius.length; i++) {
+                    radius[i] = parseInt(radius[i]);
+                }
+
+                removeAllLayer();
+                showTyphoonLine();
+                history_layers=[]
+                history_layer_flag = false;
+                window.clearInterval(id);
+                mapView.setCenter(ol.proj.transform([parseFloat(pos[0]),parseFloat(pos[1])],'EPSG:4326','EPSG:3857'));
+                map.render();
+                line1Layer = drawline(map,passed,'dodgerblue');
+                line2Layer = drawline(map,unpassed, 'yellow');
+                point1Layer = drawDifferentPoint(map, data["path"], data["point_color"]);
+                circleLayer = drawCircle(map, pos);
+
+                $("#typhoon").bootstrapTable('refresh');
+                $("#ship-table").bootstrapTable('removeAll');
+                $("input[id='search-radius']").val("");
+                updateMapSize();　
+　　　
+　　　　　　  }
+
+　　　　    });
+        }
+        /*function showTyphoonWarning() {
+            var obj = document.getElementById("typhoon_warning");
+            var data = JSON.parse(JSON.stringify({{typhoon_warning|safe}}[0]));
+            obj.innerHTML = data.warning;
+        }*/
+        //https://www.cnblogs.com/landeanfen/p/4976838.html
+
+        var obj = document.getElementById("warning");
+            var data = JSON.parse(JSON.stringify({{typhoon_warning|safe}}[0]));
+            obj.innerHTML = data.warning;
+        function addOption(name, elementId) {
+           //"typhoon_info"
+                var obj = document.getElementById(elementId);
+                obj.options.add(new Option(name, name));
+            }
+        function deleteOption(i, elementId) {
+                var obj = document.getElementById(elementId);
+                obj.options.remove(i);
+            }
+        function getTyphoonName(elementId){
+                var myselect = document.getElementById(elementId);
+                if (!myselect)
+                    return;
+                var index = myselect.selectedIndex;
+                if (index >= 0)
+                    return myselect.options[index].value;
+                return "";
+            }
+        function parseName(elementId) {
+           var str = getTyphoonName(elementId);
+           var index = str.indexOf(' ');
+           return str.substr(index+1);
+        }
+        /*function toggle() {
+            if (aside.className=='open') {
+                aside.setAttribute("clientWidth", 0)
+                aside.setAttribute("class", "close")
+                aside.setAttribute("offsetWidth", 0)
+            } else {
+                aside.setAttribute("class", "open")
+                 aside.setAttribute("clientWidth", 400)
+            }
+        }*/
+        function addAllLayer(){
+          for (var i = 0; i < history_layers.length; i++) {
+                  map.addLayer(history_layers[i]);
+          }
+    }
+        function removeAllLayer(){
+          for (var i = 0; i < history_layers.length; i++) {
+                  map.removeLayer(history_layers[i]);
+          }
+    }
+        function addPonitToGeometry(geometry, arr) {
+          for (var i = 0; i < arr.length; i++) {
+              geometry.appendCoordinate(ol.proj.transform( arr[i] ,'EPSG:4326','EPSG:3857'));
+          }
+        }
+        function drawline(map, coordinate, linecolor) {
+            var source = new ol.source.Vector();
+            var new_coors = []
+            for (var i = 0; i < coordinate.length; i++) {
+                coordinate[i][0] = parseFloat(coordinate[i][0])
+                coordinate[i][1] = parseFloat(coordinate[i][1])
+                new_coors.push(ol.proj.transform( coordinate[i] ,'EPSG:4326','EPSG:3857'))
+            }
+            var line = new ol.geom.LineString(new_coors);
+            var lineFeature = new ol.Feature(line);
+            source.addFeature(lineFeature);
+            var vectorLayer = new ol.layer.Vector({
+                source: source,
+                style: new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: linecolor, //'dodgerblue',
+                        width: 2
+                    }),
+                })
+            });
+            map.addLayer(vectorLayer); //将绘制层添加到地图容器中
+            history_layers.push(vectorLayer);
+            return vectorLayer;
+        }
+        function drawline2(map, coordinate, linecolor,width) {
+            var source = new ol.source.Vector();
+            for (var i = 0; i < coordinate.length-1; i++) {
+                var geometry = new ol.geom.LineString(); //线,Point 点,Polygon 面
+                addPonitToGeometry(geometry, [coordinate[i], coordinate[i+1]]);
+                var LineStringFeature = new ol.Feature(geometry); //绘制线的数据
+                source.addFeature(LineStringFeature);
+            }
+            var vectorLayer = new ol.layer.Vector({
+                source: source,
+                style: new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: linecolor, //'dodgerblue',
+                        width: width
+                    }),
+                })
+            });
+            map.addLayer(vectorLayer); //将绘制层添加到地图容器中
+            return vectorLayer;
+        }
+        function drawPoint(map, coordinate, linecolor) {
+            //alert(coordinate[0]);
+            var source = new ol.source.Vector();
+            for (var i = 0; i < coordinate.length; i++) {
+                coordinate[i][0] = parseFloat(coordinate[i][0])
+                coordinate[i][1] = parseFloat(coordinate[i][1])
+                var geometry = new ol.geom.Point(ol.proj.transform( coordinate[i],'EPSG:4326','EPSG:3857'),"XY"); //线,Point 点,Polygon 面
+            var PointStringFeature = new ol.Feature(geometry); //绘制点的数据
+                    //将线添加到Vector绘制层上
+            PointStringFeature.setStyle(new ol.style.Style({
+                image: new ol.style.Icon({
+                    color: linecolor,
+                    crossOrigin: 'anonymous',
+                    src:'/static/img/climate_img/dot.png',
+                    scale:0.3
+                })
+            }));
+            source.addFeature(PointStringFeature);
+            }
+
+            var vectorLayer = new ol.layer.Vector({
+                source: source
+            });
+            map.addLayer(vectorLayer); //将绘制层添加到地图容器中
+            history_layers.push(vectorLayer);
+            return vectorLayer;
+        }
+
+        function drawDifferentPoint(map, coordinate, linecolors) {
+            //alert(coordinate[0]);
+            var source = new ol.source.Vector();
+            for (var i = 0; i < coordinate.length; i++) {
+                coordinate[i][0] = parseFloat(coordinate[i][0])
+                coordinate[i][1] = parseFloat(coordinate[i][1])
+                var geometry = new ol.geom.Point(ol.proj.transform( coordinate[i],'EPSG:4326','EPSG:3857'),"XY"); //线,Point 点,Polygon 面
+            var PointStringFeature = new ol.Feature(geometry); //绘制点的数据
+                    //将线添加到Vector绘制层上
+            PointStringFeature.setStyle(new ol.style.Style({
+                image: new ol.style.Icon({
+                    color: linecolors[i],
+                    crossOrigin: 'anonymous',
+                    src:'/static/img/climate_img/dot.png',
+                    scale:0.5
+                })
+            }));
+            source.addFeature(PointStringFeature);
+            }
+
+            var vectorLayer = new ol.layer.Vector({
+                source: source
+            });
+            map.addLayer(vectorLayer); //将绘制层添加到地图容器中
+            history_layers.push(vectorLayer);
+            return vectorLayer;
+        }
+
+        function drawOnePoint(map, coordinate, linecolor) {
+            coordinate[0] = parseFloat(coordinate[0])
+                coordinate[1] = parseFloat(coordinate[1])
+            //alert(coordinate[0]);
+            var source = new ol.source.Vector();
+            var geometry = new ol.geom.Point(ol.proj.transform( coordinate,'EPSG:4326','EPSG:3857'), "XY"); //线,Point 点,Polygon 面
+            var PointStringFeature = new ol.Feature(geometry); //绘制点的数据
+                    //将线添加到Vector绘制层上
+            PointStringFeature.setStyle(new ol.style.Style({
+                image: new ol.style.Icon({
+                    color: linecolor,
+                    crossOrigin: 'anonymous',
+                    src:'/static/img/climate_img/dot.png',
+                    scale:0.5
+                })
+            }));
+            source.addFeature(PointStringFeature);
+
+            var vectorLayer = new ol.layer.Vector({
+                source: source
+            });
+            map.addLayer(vectorLayer); //将绘制层添加到地图容器中
+            return vectorLayer;
+        }
+
+        function drawCirclePoint(map, coordinate, linecolor) {
+            coordinate[0] = parseFloat(coordinate[0])
+                coordinate[1] = parseFloat(coordinate[1])
+            //alert(coordinate[0]);
+            var source = new ol.source.Vector();
+            var geometry = new ol.geom.Point(ol.proj.transform( coordinate,'EPSG:4326','EPSG:3857'), "XY"); //线,Point 点,Polygon 面
+            var PointStringFeature = new ol.Feature(geometry); //绘制点的数据
+                    //将线添加到Vector绘制层上
+            PointStringFeature.setStyle(new ol.style.Style({
+                image: new ol.style.Icon({
+                    color: linecolor,
+                    crossOrigin: 'anonymous',
+                    src:'/static/img/climate_img/typhoon.png',
+                    scale:1
+                })
+            }));
+            source.addFeature(PointStringFeature);
+
+            var vectorLayer = new ol.layer.Vector({
+                source: source
+            });
+            map.addLayer(vectorLayer); //将绘制层添加到地图容器中
+            return vectorLayer;
+        }
+
+
+        function flash(feature) {
+            var start = new Date().getTime();
+            var listenerKey;
+            var duration = 3000;
+
+            function animate(event) {
+              var vectorContext = event.vectorContext;
+              var frameState = event.frameState;
+              var flashGeom = feature.getGeometry().clone();
+              var elapsed = frameState.time - start;
+              var elapsedRatio = elapsed / duration;
+              // radius will be 5 at start and 30 at end.
+              var radius = ol.easing.easeOut(elapsedRatio) * 25 + 5;
+              var opacity = ol.easing.easeOut(1 - elapsedRatio);
+
+              var style = new ol.style.Style({
+                image: new ol.style.Circle({
+                  radius: radius,
+                  snapToPixel: false,
+                  stroke: new ol.style.Stroke({
+                    color: 'rgba(255, 0, 0, ' + opacity + ')',
+                    width: 0.25 + opacity
+                  })
+                })
+              });
+
+              vectorContext.setStyle(style);
+              vectorContext.drawGeometry(flashGeom);
+              if (elapsed > duration) {
+                ol.Observable.unByKey(listenerKey);
+                return;
+              }
+              // tell OpenLayers to continue postcompose animation
+              map.render();
+            }
+            listenerKey = map.on('postcompose', animate);
+        }
+        function drawCircle(map, originPos) {
+            originPos[0] = parseFloat(originPos[0])
+                originPos[1] = parseFloat(originPos[1])
+            originPos = ol.proj.transform( originPos, 'EPSG:4326','EPSG:3857')
+            var source2 = new ol.source.Vector({
+            wrapX: false
+          });
+          var vector2 = new ol.layer.Vector({
+            source: source2
+          });
+
+          function addPosFeature() {
+              var geom = new ol.geom.Point(originPos);
+              var feature = new ol.Feature(geom);
+              source2.addFeature(feature);
+          }
+          source2.on('addfeature', function(e) {
+            flash(e.feature);
+          });
+          map.addLayer(vector2);
+          history_layers.push(vector2);
+          id = window.setInterval(addPosFeature,1000);
+          return vector2;
+        }
+        function showTyphoonLine() {
+            var lineArr24=[[127,34],[127,21],[119,18],[119,11],[113,4.5],[105,0]];//24小时警戒线坐标集合
+            var lineArr48=[[132,34],[132,22],[132,15],[115,0]];//48小时警戒线集合
+            drawline2(map, lineArr24, "yellow",1.5);
+            drawline2(map,lineArr48,'blue',1.5);
+            showText([127,32],"24");
+            showText([127,30],"h");
+            showText([127,28],"警");
+            showText([127,26],"戒");
+            showText([127,24],"线");
+
+            showText([132,28],"48");
+            showText([132,26],"h");
+            showText([132,24],"警");
+            showText([132,22],"戒");
+            showText([132,20],"线");
+
+        }
+        function showText(coordinate, text) {
+            var iconFeature = new ol.Feature({
+                    //点要素 [116.28, 39.54]
+                    geometry: new ol.geom.Point(ol.proj.transform(coordinate ,'EPSG:4326','EPSG:3857'), "XY"),
+                    //名称属性
+                    name: text
+            });
+
+            iconFeature.setStyle(createLabelStyle(iconFeature));
+            var vectorSource = new ol.source.Vector({
+                    //指定要素
+                    features:[iconFeature]
+            });
+            //初始化矢量图层
+            var vectorLayer = new ol.layer.Vector({
+                    //数据源
+                    source:vectorSource
+            });
+            //将矢量图层添加到map中
+            map.addLayer(vectorLayer);
+            return vectorLayer;
+        }
+
+        function showOneTyphoonChart(typhoon_name, chart_data) {
+
+            Highcharts.setOptions({global:{useUTC : true}});
+            Highcharts.chart('container', {
+            chart: {
+                type: 'xrange'
+            },
+            title: {
+                text: typhoon_name + '台风信息图表'
+            },
+            xAxis: {
+                /*type: 'datetime',
+                dateTimeLabelFormats: {
+                    month: '%Y/%m'
+                },*/
+                labels:{
+                    formatter: function(){
+                        var d = new Date(this.value);
+                        var s = '<b>' + ((d.getUTCMonth()==0)?12:(d.getUTCMonth()))+ '月' + d.getUTCDate() + '日</b>';
+                        return s;
+                    }
+                },
+                //tickInterval:30*24*3600000,
+                gridLineWidth: 0, //纵向网格线宽度
+                minorTickInterval:'auto'
+            },
+            yAxis: {
+                title: {
+                    text: ''
+                },
+                categories: [1,2,3,4,5,6,7,8,9,10],
+                tickPositions:[0,1,2,3,4,5,6,7,8,9],
+                reversed: true,
+                tickPixelInterval:400,
+                //alternateGridColor: '#FDFFD5',
+                gridLineWidth: 0, //纵向网格线宽度
+                labels: {
+                    enabled: false
+                }
+            },
+            tooltip: {
+                useHTML:true,
+                    formatter: function(){
+                        var d = new Date(this.point.x);
+                        var s = this.point.z + '<br/>' + ((d.getUTCMonth()==0)?12:(d.getUTCMonth()) )+ '月' + d.getUTCDate() + '日' + d.getUTCHours() +'时-';
+                        var d1 = new Date(this.point.x2);
+                        s += '<b>' + ((d1.getUTCMonth()==0)?12:(d1.getUTCMonth())) + '月' + d1.getUTCDate() + '日' + d1.getUTCHours() +'时</b>';
+                        return s;
+                    }
+            },
+            credits:{
+                enabled:false
+            },
+            exporting: {
+                enabled:false
+            },
+            legend:{
+                enabled: false
+            },
+            series: [{
+                name: typhoon_name,
+                //pointPadding: 2,
+                // groupPadding: 0,
+                borderColor: 'gray',
+                pointWidth: 20,
+                data: chart_data,
+                    /*[{
+                    x: Date.UTC(2017, 7, 20, 0),
+                    x2: Date.UTC(2017, 7, 20, 0),
+                    y: 0,
+                    z:"未达到热带低压"
+                }, {
+                    x: Date.UTC(2017, 7, 20, 6),
+                    x2: Date.UTC(2017, 7, 21, 0),
+                    y: 1,
+                    z:"热带低压"
+                }, {
+                    x: Date.UTC(2017, 7, 21, 6),
+                    x2: Date.UTC(2017, 7, 25, 6),
+                    y: 2,
+                    z:"热带风暴"
+                }, {
+                    x: Date.UTC(2017, 7, 25, 12),
+                    x2: Date.UTC(2017, 7, 26, 6),
+                    y: 1,
+                    z:'热带低压'
+                }, {
+                    x: Date.UTC(2017, 7, 26, 12),
+                    x2: Date.UTC(2017, 7, 28, 0),
+                    y: 0,
+                    z:'未达到热带低压'
+                }],*/
+                dataLabels: {
+                    enabled: true,
+                    color:"black",
+                    formatter: function(){
+                        return this.point.z;
+                    }
+                }
+            }]
+        })
+        }
+        function showHistoryTyphoonChart() {
+            Highcharts.setOptions({global:{useUTC : true}});
+            Highcharts.chart('container', {
+            chart: {
+                type: 'xrange'
+            },
+            title: {
+                text: '2017年台风信息图表'
+            },
+            xAxis: {
+                /*type: 'datetime',
+                dateTimeLabelFormats: {
+                    month: '%Y/%m'
+                },*/
+                labels:{
+                    formatter: function(){
+                        var d = new Date(this.value);
+                        var s = '<b>' + ((d.getUTCMonth()==0)?12:(d.getUTCMonth()))+ '月' + d.getUTCDate() + '日</b>';
+                        return s;
+                    }
+                },
+                tickInterval:30*24*3600000,
+                gridLineWidth: 0, //纵向网格线宽度
+                minorTickInterval:'auto'
+            },
+            yAxis: {
+                title: {
+                    text: ''
+                },
+                categories: [1,2,3,4,5,6,7,8,9,10],
+                tickPositions:[0,1,2,3,4,5,6,7,8,9],
+                reversed: true,
+                tickPixelInterval:400,
+                //alternateGridColor: '#FDFFD5',
+                gridLineWidth: 0, //纵向网格线宽度
+                labels: {
+                    enabled: false
+                }
+            },
+            tooltip: {
+                useHTML:true,
+                    formatter: function(){
+                        var d = new Date(this.point.x);
+                        var s = this.point.z + '<br/>' + ((d.getUTCMonth()==0)?12:(d.getUTCMonth()) )+ '月' + d.getUTCDate() + '日-';
+                        var d1 = new Date(this.point.x2);
+                        s += '<b>' + ((d1.getUTCMonth()==0)?12:(d1.getUTCMonth())) + '月' + d1.getUTCDate() + '日</b>';
+                        return s;
+                    }
+            },
+            credits:{
+                enabled:false
+            },
+            exporting: {
+                enabled:false
+            },
+            legend:{
+                enabled: false
+            },
+            series: [{
+                name: '2017年台风',
+                //pointPadding: 2,
+                // groupPadding: 0,
+                borderColor: 'gray',
+                pointWidth: 20,
+                cursor: 'pointer',
+                events: {
+                    click: function(e) {
+                     updateHTInfoByClick(e.point.z);
+                    }
+                },
+                data: [{
+                    x: Date.UTC(2017, 4, 22),
+                    x2: Date.UTC(2017, 4, 29),
+                    y: 0,
+                    z:'1701 UIF'
+                }, {
+                    x: Date.UTC(2017, 6, 10),
+                    x2: Date.UTC(2017, 6, 13),
+                    y: 1,
+                    z:'1702 ERBO'
+                }, {
+                    x: Date.UTC(2017, 7, 7),
+                    x2: Date.UTC(2017, 7, 11),
+                    y: 2,
+                    z:'1703 ANMADO'
+                },
+                       {
+                           x: Date.UTC(2017, 7, 14),
+                           x2: Date.UTC(2017, 7, 17),
+                           y: 3,
+                           z:'1704 ALA'
+                       }, {
+                           x: Date.UTC(2017, 7, 19),
+                           x2: Date.UTC(2017, 8, 9),
+                           y: 4,
+                           z:'1705 OR'
+                       }, {
+                           x: Date.UTC(2017, 7, 20),
+                           x2: Date.UTC(2017, 7, 28),
+                           y: 5,
+                           z:'1706 ULA'
+                       }, {
+                           x: Date.UTC(2017, 7, 21),
+                           x2: Date.UTC(2017, 7, 23),
+                           y: 6,
+                           z:'1707 OK'
+                       }, {
+                           x: Date.UTC(2017, 7, 21),
+                           x2: Date.UTC(2017, 7, 29),
+                           y: 7,
+                           z:'1708 ONC'
+                       }, {
+                           x: Date.UTC(2017, 7, 25),
+                           x2: Date.UTC(2017, 7, 31),
+                           y: 8,
+                           z:'1709 ESA'
+                       }, {
+                           x: Date.UTC(2017, 7, 27),
+                           x2: Date.UTC(2017, 8, 3),
+                           y: 9,
+                           z:'1710 AITAN'
+                       }, {
+                           x: Date.UTC(2017, 8, 1),
+                           x2: Date.UTC(2017, 8, 8),
+                           y: 0,
+                           z:'1711 ALGA'
+                       }, {
+                           x: Date.UTC(2017, 8, 10),
+                           x2: Date.UTC(2017, 8, 17),
+                           y: 1,
+                           z:'1712 ANYA'
+                       }, {
+                           x: Date.UTC(2017, 8, 19),
+                           x2: Date.UTC(2017, 8, 25),
+                           y: 2,
+                           z:'1713 AT'
+                       }, {
+                           x: Date.UTC(2017, 8, 24),
+                           x2: Date.UTC(2017, 8, 28),
+                           y: 3,
+                           z:'1714 AKHA'
+                       }, {
+                           x: Date.UTC(2017, 8, 27),
+                           x2: Date.UTC(2017, 9, 6),
+                           y: 4,
+                           z:'1715 ANV'
+                       }, {
+                           x: Date.UTC(2017, 8, 31),
+                           x2: Date.UTC(2017, 9, 4),
+                           y: 5,
+                           z:'1716 AWA'
+                       }, {
+                           x: Date.UTC(2017, 9, 3),
+                           x2: Date.UTC(2017, 9, 7),
+                           y: 6,
+                           z:'1717 UCHO'
+                       }, {
+                           x: Date.UTC(2017, 9, 9),
+                           x2: Date.UTC(2017, 9, 22),
+                           y: 7,
+                           z:'1718 ALI'
+                       }, {
+                           x: Date.UTC(2017, 9, 11),
+                           x2: Date.UTC(2017, 9, 16),
+                           y: 8,
+                           z:'1719 OKSUR'
+                       }, {
+                           x: Date.UTC(2017, 10, 11),
+                           x2: Date.UTC(2017, 10, 16),
+                           y: 9,
+                           z:'1720 HANU'
+                       }, {
+                           x: Date.UTC(2017, 10, 15),
+                           x2: Date.UTC(2017, 10, 23),
+                           y: 0,
+                           z:'1721 A'
+                       }, {
+                           x: Date.UTC(2017, 10, 22),
+                           x2: Date.UTC(2017, 10, 29),
+                           y: 1,
+                           z:'1722 AOL'
+                       }, {
+                           x: Date.UTC(2017, 10, 31),
+                           x2: Date.UTC(2017, 11, 5),
+                           y: 2,
+                           z:'1723 AMRE'
+                       }, {
+                           x: Date.UTC(2017, 11, 7),
+                           x2: Date.UTC(2017, 11, 13),
+                           y: 3,
+                           z:'1724 AIKU'
+                       }, {
+                           x: Date.UTC(2017, 11, 16),
+                           x2: Date.UTC(2017,11, 19),
+                           y: 4,
+                           z:'1725 IROG'
+                       },
+                       {
+                           x: Date.UTC(2017, 12, 13),
+                           x2: Date.UTC(2017, 12, 22),
+                           y: 5,
+                           z:'1726 AI-TA'
+                       }, {
+                           x: Date.UTC(2017, 12, 20),
+                           x2: Date.UTC(2017, 12, 26),
+                           y: 6,
+                           z:'1727 EMBI'
+                       }],
+                dataLabels: {
+                    enabled: true,
+                    color:"black",
+                    formatter: function(){
+                        return this.point.z;
+                    }
+                }
+            }]
+        })
+        }
+
+        function getMinZoom() {
+          var key_size = $('.col-md-4').height();
+          if ($('.col-md-8').width() < $('.col-md-4').height())
+              key_size = $('.col-md-8').width();
+          return Math.ceil(Math.LOG2E * Math.log(key_size / 256) + 1) ;
+        }
+        function dateadd(sdate, delta, ymdh){
+             if(!sdate ) return;
+
+             if(typeof sdate == 'object') sdate = sdate.toLocaleString();
+
+             /(\d{4})[\D](\d{1,2})[\D](\d{1,2})[\D]?\s(\d{1,2}):(\d{1,2}):(\d{1,2})/.exec(sdate);
+             var a = [0,0,0,0];
+
+             switch(ymdh){
+              case 'y':
+               a = [delta, -1, 0, 0];
+               break;
+              case 'm':
+               a=[0, delta-1, 0, 0];
+               break;
+              case 'H':
+               a=[0, -1, 0, delta];
+               break;
+              default:
+               a = [0, -1, delta, 0];
+               break;
+             }
+
+
+             return new Date(parseInt(RegExp.$1)+ a[0], parseInt(RegExp.$2)+a[1], parseInt(RegExp.$3)+a[2], parseInt(RegExp.$4)+a[3], RegExp.$5,RegExp.$6);
+        }
+
+        function getShipRroundTyphoon() {
+            if (event.keyCode==13) {
+                var v = document.getElementById("search-radius").value;
+                if (v > 1000 || v < 100)
+                    alert("请输入100-1000范围的数字。")
+                else
+                    $("#ship-table").bootstrapTable('refresh');
+            }
+        }
+        showTyphoonLine();
+        updateHTInfo();
+
+
+
+
+        /*window.addEventListener('resize', function() {
+            var minZoom = getMinZoom();
+            if (minZoom !== mapView.getMinZoom()) {
+              mapView.setMinZoom(minZoom);
+            }
+        })*/
+
+        function setPointStyle(color) {
+              var stroke = new ol.style.Stroke({color: 'green', width: 0});
+              var fill = new ol.style.Fill({color: color});
+              var point_style = new ol.style.Style({
+                  image: new ol.style.Circle({
+                      fill: fill,
+                      stroke: stroke,
+                      radius: 4
+                  })
+              });
+              return point_style;
+        }
+
+        var finalExtend;
+        function createCircle(center_pos) {
+
+
+            var features = [];
+            var ship_radius = parseInt(document.getElementById("search-radius").value) + 20;
+            var circleFeature = new ol.Feature({
+                //点要素 [116.28, 39.54]
+                geometry: new ol.geom.Circle(ol.proj.transform([parseFloat(center_pos[0]), parseFloat(center_pos[1])], 'EPSG:4326', 'EPSG:3857'), ship_radius * 1000),
+                //名称属性
+            });
+            var style = new ol.style.Style({
+                fill: new ol.style.Fill({
+                    color: 'rgba(20, 100, 240, 1)',
+                    opacity:0.1
+                }),
+                /*stroke: new ol.style.Stroke({
+                    width: 3,
+                    color: 'rgba(0, 100, 240, 0.8)'
+                }),*/
+                image: new ol.style.Circle({
+                    fill: new ol.style.Fill({
+                        color: 'rgba(55, 200, 150, 1)',
+                        opacity:0.1
+                    }),
+                    /*stroke: new ol.style.Stroke({
+                        width: 10,
+                        color: 'rgba(55, 200, 150, 0.8)'
+                    }),*/
+                    radius: 7
+                }),
+            });
+            var feature_coors = circleFeature.getGeometry().getExtent();
+            if (!finalExtend)
+                finalExtend = feature_coors;
+            else
+                finalExtend = ol.extent.extend(finalExtend, feature_coors)
+
+            /*feature1 = new ol.Feature({
+                           geometry: new ol.geom.Point([feature_coors[0], feature_coors[1]],"XY")});
+            feature1.setStyle(setPointStyle('green'));
+            features.push(feature1);*/
+
+            feature1 = new ol.Feature({
+                           geometry: new ol.geom.Point([feature_coors[2], feature_coors[1]],"XY")});
+            feature1.setStyle(setPointStyle('yellow'));
+            features.push(feature1);
+
+
+            /*feature1 = new ol.Feature({
+                           geometry: new ol.geom.Point([feature_coors[2], feature_coors[3]],"XY")});
+            feature1.setStyle(setPointStyle('red'));
+            features.push(feature1);
+            */
+
+            feature1 = new ol.Feature({
+                           geometry: new ol.geom.Point([feature_coors[0], feature_coors[3]],"XY")});
+            feature1.setStyle(setPointStyle('black'));
+            features.push(feature1);
+
+
+            //features.push(circleFeature);
+             /*var vectorSource = new ol.source.Vector({
+                //指定要素
+                features: features
+            });
+            //初始化矢量图层
+            var vectorLayer = new ol.layer.Vector({
+                //数据源
+                source:vectorSource,
+                style:style
+            });
+            //将矢量图层添加到map中
+            map.addLayer(vectorLayer);
+            return vectorLayer;　*/
+        }
+
+
+        function showShipCircle() {
+            if(circle_ship_layer)
+                map.removeLayer(circle_ship_layer);
+            if (passed.length < 0 ) {
+                alert("不存在台风，或者台风没有已经过路径")
+                return;
+            }
+
+            if (history_layer_flag == true) {
+                removeAllLayer();
+                history_layers=[];
+            }
+
+            var circleMoveFeature = function(event) {
+                    if (circle_animating) {
+                        var ship_elapsedTime = new Date().getTime() - ship_now;
+                // here the trick to increase speed is to jump some indexes
+                        // on lineString coordinates
+                        ship_index = Math.round(5*ship_elapsedTime / 1000);
+
+                        if (ship_index > passed.length) {
+                            stopCircleAnimation(true);
+                            return;
+                        }
+                        //window.clearInterval(id);
+                    // tell OpenLayers to continue the postcompose animation
+                        //drawCircle(map, passed[index]);
+
+
+                        if (history_layer_flag == true) {
+                            if (circleLayer) {
+                                map.removeLayer(circleLayer);
+                                circleLayer = drawCirclePoint(map, passed[ship_index], "white");
+                                history_layers.push(drawOnePoint(map, passed[ship_index], "orange"));
+                            } else
+                                circleLayer = drawCirclePoint(map, passed[ship_index], "white");
+                        }
+                        if (circle_ship_layer) {
+                            if (ship_index> 2) {
+                                map.removeLayer(circle_ship_layer);
+                                circle_ship_layer = drawShipCircle(ship_index);
+                                map.addLayer(circle_ship_layer)
+                            }
+                        } else {
+                            circle_ship_layer = drawShipCircle(2);
+                            map.addLayer(circle_ship_layer);
+                        }
+
+                    }
+                     map.render();
+                };
+                function stopCircleAnimation(ended) {
+                    circle_animating = false;
+                    if (history_layer_flag == true) {
+                        history_layers.push(circleLayer);
+                    }
+                    map.un('postcompose', circleMoveFeature);
+                }
+
+
+                var ship_now = new Date().getTime();
+                line1Layer = drawline(map,passed,'dodgerblue');
+
+                var circle_animating = true;
+                map.on('postcompose', circleMoveFeature);
+                map.render();
+        }
+
+        function showShipCircleAndTyphoon() {
+            if(circle_ship_layer)
+                map.removeLayer(circle_ship_layer);
+            if (passed.length < 0 ) {
+                alert("不存在台风，或者台风没有已经过路径")
+                return;
+            }
+
+            var circleMoveFeature = function(event) {
+                    if (circle_animating) {
+                        var ship_elapsedTime = new Date().getTime() - ship_now;
+                // here the trick to increase speed is to jump some indexes
+                        // on lineString coordinates
+                        ship_index = Math.round(5*ship_elapsedTime / 1000);
+
+                        if (ship_index > passed.length) {
+                            stopCircleAnimation(true);
+                            return;
+                        }
+                        //window.clearInterval(id);
+                    // tell OpenLayers to continue the postcompose animation
+                        //drawCircle(map, passed[index]);
+
+                        if (circle_ship_layer) {
+                            if (ship_index> 2) {
+                                map.removeLayer(circle_ship_layer);
+                                circle_ship_layer = drawShipCircle(ship_index);
+                                map.addLayer(circle_ship_layer)
+                            }
+                        } else {
+                            circle_ship_layer = drawShipCircle(2);
+                            map.addLayer(circle_ship_layer);
+                        }
+                    }
+                     map.render();
+                };
+                function stopCircleAnimation(ended) {
+                    circle_animating = false;
+                    map.un('postcompose', circleMoveFeature);
+                }
+
+
+                var ship_now = new Date().getTime();
+
+                var circle_animating = true;
+                map.on('postcompose', circleMoveFeature);
+                map.render();
+        }
+
+        function drawShipCircle(index) {
+            //alert(index)
+            if (index <= 1)
+                return;
+            var new_coors = []
+
+            for (var i = 0; i < index; i++) {
+                passed[i][0] = parseFloat(passed[i][0])
+                passed[i][1] = parseFloat(passed[i][1])
+                new_coors.push(ol.proj.transform( passed[i] ,'EPSG:4326','EPSG:3857'))
+            }
+            var lineFeature = drawCircleSomeRadius2(new_coors, radius);
+
+            var vectorSource = new ol.source.Vector({});
+                vectorSource.addFeature(lineFeature);
+            //初始化矢量图层
+            var vectorLayer = new ol.layer.Vector({
+                //数据源
+                source:vectorSource,
+            });
+            return vectorLayer;
+        }
+
+        function drawCircleSomeRadius(new_coors, ship_radius) {
+            var line = new ol.geom.LineString(new_coors);
+            var lineFeature = new ol.Feature(line);
+
+            //var ship_radius = 100 //parseInt(document.getElementById("search-radius").value) +20;
+            var parser = new jsts.io.OL3Parser();
+
+            parser.inject(ol.geom.Point, ol.geom.LineString, ol.geom.LinearRing, ol.geom.Polygon,
+                    ol.geom.MultiPoint, ol.geom.MultiLineString, ol.geom.MultiPolygon);
+
+                    // convert the OpenLayers geometry to a JSTS geometry
+            var jstsGeom = parser.read(lineFeature.getGeometry());
+
+                    // create a buffer of 40 meters around each line
+            var buffered = jstsGeom.buffer(ship_radius*1000);
+
+                    // convert back from JSTS and replace the geometry on the feature
+            lineFeature.setGeometry(parser.write(buffered));
+            return lineFeature;
+        }
+
+        function drawCircleSomeRadius2(new_coors, ship_radius) {
+            var area;
+            for (var i = 0; i < new_coors.length; i++) {
+                var wkt_point = 'POINT (' + new_coors[i][0] + " " + new_coors[i][1] +")";
+                var reader = new jsts.io.WKTReader();
+                var point = reader.read(wkt_point);
+                var buffered = point.buffer(ship_radius[i]*1000);
+
+                if (i ==0)
+                    area = buffered;
+                else {
+                    area = area.union(buffered);
+                    if (i == new_coors.length -1) {
+                        var parser = new jsts.io.OL3Parser();
+                        var ol_geom = parser.write(area);
+                        var area_feature = new ol.Feature(ol_geom);
+                        return area_feature;
+                    }
+                }
+            }
+            return;
+        }
+
+        function showShipCircle2() {
+            if(circle_ship_layer)
+                map.removeLayer(circle_ship_layer);
+
+            var features=[];
+            var ship_radius = parseInt(document.getElementById("search-radius").value) +20;
+            finalExtend = null;
+            for (var i = 0; i < passed.length; i++) {
+
+                createCircle(passed[i]);
+                /*var circleFeature = new ol.Feature({
+                    //点要素 [116.28, 39.54]
+                    geometry: new ol.geom.Circle(ol.proj.transform([parseFloat(pos[0]), parseFloat(pos[1])], 'EPSG:4326', 'EPSG:3857'), ship_radius * 1000),
+                    //名称属性
+                });
+                var style = new ol.style.Style({
+                    fill: new ol.style.Fill({
+                        color: 'rgba(20, 100, 240, 0.3)'
+                    }),
+                    stroke: new ol.style.Stroke({
+                        width: 3,
+                        color: 'rgba(0, 100, 240, 0.8)'
+                    }),
+                    image: new ol.style.Circle({
+                        fill: new ol.style.Fill({
+                            color: 'rgba(55, 200, 150, 0.3)'
+                        }),
+                        stroke: new ol.style.Stroke({
+                            width: 10,
+                            color: 'rgba(55, 200, 150, 0.8)'
+                        }),
+                        radius: 7
+                    }),
+                });
+                features.push(circleFeature);*/
+            }
+
+            /*feature1 = new ol.Feature({
+                           geometry: new ol.geom.Point([finalExtend[0], finalExtend[1]],"XY")});
+            feature1.setStyle(setPointStyle('blue'));
+            features.push(feature1);
+
+            feature1 = new ol.Feature({
+                           geometry: new ol.geom.Point([finalExtend[2], finalExtend[1]],"XY")});
+            feature1.setStyle(setPointStyle('blue'));
+            features.push(feature1);
+
+
+            feature1 = new ol.Feature({
+                           geometry: new ol.geom.Point([finalExtend[2], finalExtend[3]],"XY")});
+            feature1.setStyle(setPointStyle('blue'));
+            features.push(feature1);
+
+            feature1 = new ol.Feature({
+                           geometry: new ol.geom.Point([finalExtend[0], finalExtend[3]],"XY")});
+            feature1.setStyle(setPointStyle('blue'));
+            features.push(feature1);*/
+
+            feature1 = new ol.Feature({
+                           geometry: new ol.geom.Polygon([[finalExtend[0], finalExtend[1]],
+                               [finalExtend[2], finalExtend[1]],
+                               [finalExtend[2], finalExtend[3]],
+                               [finalExtend[0], finalExtend[3]],
+                               [finalExtend[0], finalExtend[1]]])});
+            feature1.setStyle(new ol.style.Style({
+                fill: new ol.style.Fill({
+                    color: 'rgba(20, 100, 240, 1)',
+                    opacity:0.1
+                }),
+                /*stroke: new ol.style.Stroke({
+                    width: 3,
+                    color: 'rgba(0, 100, 240, 0.8)'
+                }),*/
+                image: new ol.style.Circle({
+                    fill: new ol.style.Fill({
+                        color: 'rgba(55, 200, 150, 1)',
+                        opacity:0.1
+                    }),
+                    /*stroke: new ol.style.Stroke({
+                        width: 10,
+                        color: 'rgba(55, 200, 150, 0.8)'
+                    }),*/
+                    radius: 7
+                }),
+            }));
+            features.push(feature1);
+
+
+
+
+            var index = 1;
+
+             $.ajax({
+               url : 'typhoon/get_circle_ship_info', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {
+                   'lon' : pos[0],
+                    'lat': pos[1],               　　
+                   'radius': document.getElementById("search-radius").value               　　　　　
+　　　　　　  　 },
+　　　　        dataType : 'json',
+　　　　        success: function(data){
+                   cicle_ships = data;　
+                   for (var i = 0; i < cicle_ships.length; i++) {
+                       var coordinate = [parseFloat(cicle_ships[i]['lon']), parseFloat(cicle_ships[i]['lat'])];
+                       features[index] = new ol.Feature({
+                           geometry: new ol.geom.Point(ol.proj.transform(coordinate ,'EPSG:4326','EPSG:3857'),"XY"),
+                           name: cicle_ships[i]['mmsi']});
+                       features[index].setStyle(setPointStyle('green'));
+                       index+=1;
+                   }
+                   var vectorSource = new ol.source.Vector({
+                //指定要素
+                features: features
+            });
+            //初始化矢量图层
+            var vectorLayer = new ol.layer.Vector({
+                //数据源
+                source:vectorSource,
+            });
+            //将矢量图层添加到map中
+            map.addLayer(vectorLayer);
+            circle_ship_layer=vectorLayer;
+            return vectorLayer;　　
+　　　　　　  }
+　　　　    });
+
+        }
+
+        function updateMapSize() {
+            var printSize = [$('.col-md-8').width(), $('.col-md-4').height()];
+            map.setSize(printSize);
+        }
+
+        function setTriangleStyle(color) {
+              var stroke = new ol.style.Stroke({color: 'black', width: 1});
+              var fill = new ol.style.Fill({color: color});
+              var triangle_style = new ol.style.Style({
+                  image: new ol.style.RegularShape({
+                      fill: fill,
+                      stroke: stroke,
+                      points: 3,
+                      radius: 8,
+                      rotation: Math.PI / 4,
+                      angle: 0
+                  })
+              });
+              return triangle_style;
+        }
+
+        function setPointStyle(color) {
+              var stroke = new ol.style.Stroke({color: 'green', width: 0});
+              var fill = new ol.style.Fill({color: color});
+              var point_style = new ol.style.Style({
+                  image: new ol.style.Circle({
+                      fill: fill,
+                      stroke: stroke,
+                      radius: 2
+                  })
+              });
+              return point_style;
+        }
+
+        function showAllShips(pointflag) {
+                var features = [];
+                index = 0;
+                for (var i  in shipdata) {
+                    var coordinate = [parseFloat(shipdata[i][0]), parseFloat(shipdata[i][1])];
+                      //coordinate = ol.proj.transform(coordinate,'EPSG:4326','EPSG:3857');
+                        features[index] = new ol.Feature({
+                            geometry: new ol.geom.Point(ol.proj.transform(coordinate ,'EPSG:4326','EPSG:3857'),"XY"),
+                            name: i});
+                        if (pointflag)
+                            features[index].setStyle(setPointStyle(shipdata[i][2]));  //colorList[i]
+                        else
+                            features[index].setStyle(setTriangleStyle(shipdata[i][2]));
+                         index+=1;
+                }
+                /*for (var i = 0; i < shipdata["types"].length; i++) {
+                  var type_ship = shipdata["type_ships"][shipdata["types"][i]];
+                  var show_max_ships = type_ship.length > 400?400:type_ship.length;
+                  for (var j = 0; j < show_max_ships; j++) {
+                      var coordinate = [parseFloat(type_ship[j][1]), parseFloat(type_ship[j][2])];
+                      //coordinate = ol.proj.transform(coordinate,'EPSG:4326','EPSG:3857');
+                        features[index] = new ol.Feature({
+                            geometry: new ol.geom.Point(ol.proj.transform(coordinate ,'EPSG:4326','EPSG:3857'),"XY"),
+                            name: type_ship[j][0]});
+                        if (pointflag)
+                            features[index].setStyle(setPointStyle("green"));  //colorList[i]
+                        else
+                            features[index].setStyle(setTriangleStyle("green"));
+                         index+=1;
+                  }
+              }*/
+            /*for (var i = 0; i < 20; ++i) {
+            var coordinate = [120,20+i*0.5];
+            features[i] = new ol.Feature(new ol.geom.Point(ol.proj.transform(coordinate ,'EPSG:4326','EPSG:3857'), "XY"));
+            features[i].setStyle(setTriangleStyle(colorList[i]));
+          }*/
+
+            var trisource = new ol.source.Vector({
+            features: features
+          });
+            var trivectorLayer = new ol.layer.Vector({
+            source: trisource,
+          });
+            map.addLayer(trivectorLayer);
+            return trivectorLayer;
+        }
+
+        map.on("moveend",function(e){
+            var features = [];
+            var zoom = map.getView().getZoom();  //获取当前地图的缩放级别
+            if(zoom >= 10 && cur_zoom < 10){
+                features = ship_layer.getSource().getFeatures();
+                for (var i = 0; i < features.length; i++)
+                    features[i].setStyle(setTriangleStyle(shipdata[features[i].get("name")][2]))
+                cur_zoom = zoom;
+            }
+            if (cur_zoom >=10 && zoom < 10){
+                features = ship_layer.getSource().getFeatures();
+                for (var i = 0; i < features.length; i++)
+                    features[i].setStyle(setPointStyle(shipdata[features[i].get("name")][2]))
+                cur_zoom = zoom;
+            }
+        });
+
+    </script>
+</body>
+</html>

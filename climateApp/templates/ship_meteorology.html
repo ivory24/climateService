@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'openlayers\openlayers_v4.5.0_ol.css' %}" type="text/css">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <script src="{% static 'openlayers\openlayers_v4.5.0_ol.js' %}" type="text/javascript"></script>
+    <script src="https://code.jquery.com/jquery-2.2.3.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+
+    <script type="text/javascript" src="{% static 'js/highcharts.js' %}"></script>
+
+    <title>船只气象</title>
+    <style>
+     .map {
+       height: 100%;
+       width: 100%;
+     }
+     .ol-popup {
+      position: absolute;
+      background-color: white;
+      -webkit-filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+      filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #cccccc;
+      bottom: 12px;
+      left: -50px;
+      min-width: 350px;
+    }
+    .ol-popup:after, .ol-popup:before {
+      top: 100%;
+      border: solid transparent;
+      content: " ";
+      height: 0;
+      width: 0;
+      position: absolute;
+      pointer-events: none;
+    }
+    .ol-popup:after {
+      border-top-color: white;
+      border-width: 10px;
+      left: 48px;
+      margin-left: -10px;
+    }
+    .ol-popup:before {
+      border-top-color: #cccccc;
+      border-width: 11px;
+      left: 48px;
+      margin-left: -11px;
+    }
+    .ol-popup-closer {
+      text-decoration: none;
+      position: absolute;
+      top: 2px;
+      right: 8px;
+    }
+    .ol-popup-closer:after {
+      content: "x";
+    }
+     .sea-map-label {
+    position: absolute;
+    top: 10px;
+    right: 170px;
+    border: 1px;
+    border-color: #333;
+    background-color: #339999;
+    color: #fff;
+    box-shadow: 0px 0px 2px #666;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:80px;
+         text-align: center;
+    }
+     .star-map-label {
+    position: absolute;
+    top: 10px;
+    right: 90px;
+    border: 1px;
+    border-color: #333;
+    background-color: #339999;
+    color: #fff;
+    box-shadow: 0px 0px 2px #666;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:80px;
+         text-align: center;
+    }
+     .map-label {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border: 1px;
+    border-color: #333;
+    background-color: #339999;
+    color: #fff;
+    box-shadow: 0px 0px 2px #666;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:80px;
+         text-align: center;
+    }
+     .left-precision-label {
+         position: absolute;
+    top: 40px;
+    right: 150px;
+    color: #fff;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:100px;
+         text-align: right;
+         color: #0f0f0f;
+     }
+     .right-precision-label {
+         position: absolute;
+    top: 40px;
+    right: 40px;
+    color: #fff;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:50px;
+         text-align: left;
+         color: #0f0f0f;
+     }
+     .rangeContainer {
+         position: absolute;
+         top: 40px;
+         right: 100px;
+         cursor: pointer;
+         width: 50px;
+     }
+     .confirm-button {
+         position: absolute;
+         top: 10px;
+         right: 260px;
+         cursor: pointer;
+     }
+     .submit-button {
+         height: 21px;
+     }
+       .ship-select {
+           position: absolute;
+         top: 10px;
+         right: 310px;
+         cursor: pointer;
+       }
+       .row-eq-height{
+        display: flex;
+       }
+     .legend{
+        position: absolute;
+        top: 60px;
+        right: 0px;
+	}
+
+   </style>
+</head>
+
+<body>
+    <div class="container-fluid" style="height: 100%">
+        <div class="row">
+           <div class="nav navbar-header navbar-left">
+               <a class="navbar-brand">CSSC</a>
+           </div>
+            <div class="nav navbar-nav navbar-right" >
+                <li><a href="/home">首页</a></li>
+                <li><a href="/seaway">航线气象</a></li>
+                <li><a href="/typhoon">台风预警</a></li>
+                <li><a href="/ship">船只气象</a></li>
+                <li><a href="/area">目标区域气象</a></li>
+                <li>
+                    <select style="margin-top: 12px; color: #000;" onchange="changeSystem()" id="system-select">
+                        <option value="transfer">江海联运</option>
+                        <option value="manage">海事监管</option>
+                        <option selected="selected" value="weather">精细化气象</option>
+                        <option value="ecology">海岸线生态</option>
+                    </select>
+                </li>
+                <!--<li><a><span class="glyphicon glyphicon-user"></span></a></li>
+                <li><a>admin</a></li>-->
+                <li><a><span class="glyphicon glyphicon-log-out" style="margin-right: 20px" onclick="logout()"></span></a></li>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            天气实况
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                       <table style="width:100%; table-layout:fixed" class="border" rules="none">
+                           <tr align="center" valign="top">
+                               <td>温度</br>
+                                   <img src="{% static 'img/climate_img/1.png' %}" style="width:50px; height: 50px"/></br>
+                                   <p id="td_temperature"></p>
+                               </td>
+                               <td>湿度</br>
+                                   <img src="{% static 'img/climate_img/2.png' %}" style="width:50px; height: 50px"/></br>
+                                   <p id="td_humidity"></p>
+                               </td>
+                               <td>风速</br>
+                                   <img src="{% static 'img/climate_img/3.png' %}" style="width:50px; height: 50px"/></br>
+                                   <p id="td_wind_speed"></p></td>
+                           </tr>
+                           <tr align="center" valign="top">
+                               <td>
+                                   风向</br>
+                                   <img src="{% static 'img/climate_img/4.png' %}" style="width:50px; height: 50px"/></br>
+                                   <p id="td_wind_component"></p>
+                               </td>
+                               <td>降水量</br>
+                                   <img src="{% static 'img/climate_img/5.png' %}" style="width:50px; height: 50px"/></br>
+                                   <p id="td_precipitation"></p>
+                               </td>
+                               <td>能见度</br>
+                                   <img src="{% static 'img/climate_img/6.png' %}" style="width:50px; height: 50px"/></br>
+                                   <p id="td_visibility"></p>
+                               </td>
+                           </tr>
+                           <tr align="center" valign="top">
+                               <td>浪</br>
+                                   <img src="{% static 'img/climate_img/7.png' %}" style="width:50px; height: 50px"/></br>
+                                   <p id="td_sea_wave_high"></p>
+                               </td>
+                               <td>涌</br>
+                                   <img src="{% static 'img/climate_img/8.png' %}" style="width:50px; height: 50px"/></br>
+                                   <p id="td_swell_height"></p>
+                                   <p id="td_swell_period"></p>
+                                   <p id="td_swell_direction"></p>
+                               </td>
+                               <td>流</br>
+                                   <img src="{% static 'img/climate_img/9.png' %}" style="width:50px; height: 50px"/></br>
+                                   <p id="td_ocean_h"></p>
+                                   <p id="td_ocean_t"></p>
+                                   <p id="td_ocean_u"></p>
+                                   <p id="td_ocean_v"></p>
+                                   <p id="td_ocean_w"></p>
+                               </td>
+                           </tr>
+                       </table>
+                    </div>
+                </div>
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" id="ship-chart-title">
+                            天气预报
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                        <table style="width:100%; table-layout:fixed" class="border" rules="none">
+                           <tr align="left">
+                               <td onclick="ship_temperature_chart()"><span style="background:#FF0000">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>温度</span>
+                               </td>
+                               <td onclick="ship_humidity_chart()"><span style="background:#003366">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>湿度</span>
+                               </td>
+                               <td onclick="ship_wind_speed_chart()"><span style="background:#0099CC">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>风速</span></td>
+                               <td onclick="ship_wind_component_chart()"><span style="background:#FF9933">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>风向</span>
+                               </td>
+                               <td onclick="ship_precipitation_chart()"><span style="background:#99FFCC">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>降雨量</span>
+                               </td>
+                           </tr>
+                            <tr align="left">
+                               <td onclick="ship_sea_wave_chart()"><span style="background:#00CC33">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>浪&nbsp&nbsp&nbsp</span></td>
+                                <td onclick="ship_height_swell_chart()"><span style="background:#CC9900">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>&nbsp涌&nbsp&nbsp</span></td>
+                                <td onclick="ship_ocean_current_h_chart()"><span style="background:#CC9999">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>&nbsp流&nbsp</span></td>
+                                <td onclick="ship_visibility_chart()"><span style="background:#696969">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</span>
+                        <span>能见度</span></td>
+                                <td></td>
+                           </tr>
+                        </table>
+                        <div id="chart_container" style="height: 300px"></div>
+                    </div>
+                </div>
+                <div class="panel panel-danger">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            天气预警
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                        <span style="color:#FF0000">台风天气预警</span>
+                        <p id="typhoon_warning"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div id="map" class="map" style="width: 100%; height: 100%;">
+                    <div id="popup" class="ol-popup">
+                    <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+                    <div id="popup-content"></div>
+                </div>
+                   <!---<div class="dropdown">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                        出发地
+                        <span class="caret"></span>
+                    </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a>出发地1</a></li>
+                            <li><a>出发地2</a></li>
+                        </ul>
+                    </div>
+                <div class="dropdown">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                        目的地
+                        <span class="caret"></span>
+                    </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a>目的地1</a></li>
+                            <li><a>目的地2</a></li>
+                        </ul>
+                    </div>--->
+
+            </div>
+        </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function logout(){
+            delCookie("token");
+            window.location.href="http://218.205.125.100/jfinal_sso/member/logout";
+        }
+        function getCookie(name)
+        {
+            var arr,reg=new RegExp("(^| )"+name+"=([^;]*)(;|$)");
+            if(arr=document.cookie.match(reg))
+                return unescape(arr[2]);
+            else
+                return null;
+        }
+        function delCookie(name)
+        {
+            var exp = new Date();
+            exp.setTime(exp.getTime() - 1);
+            var cval=getCookie(name);
+            if(cval!=null)
+                document.cookie= name + "="+cval+";expires="+exp.toGMTString();
+        }
+        function changeSystem() {
+            var systemName = $('select  option:selected').val();
+            if (systemName == "transfer") {
+                window.location.href="http://218.205.125.144:9620" + "?" + document.cookie;
+            } else if (systemName == "manage") {
+                window.location.href="http://218.205.125.144:9630" + "?" + document.cookie;
+            } else if (systemName == "weather") {
+                window.location.href="http://218.205.125.147:8002/home" + "?" + document.cookie;
+            } else {
+                window.location.href="http://218.205.125.141:8090/zsngweb" + "?" + document.cookie;
+            }
+
+        }
+
+
+        Highcharts.setOptions({global:{useUTC:true}});
+        var history_layers=[]
+        var mapView = new ol.View({
+            //center: ol.proj.transform( [122.00,29.00] ,'EPSG:4326','EPSG:3857'),
+             //zoom: 8.8,
+            center: ol.proj.transform( [112,27] ,'EPSG:4326','EPSG:3857'),
+            zoom: 3.8,
+            minZoom:getMinZoom()
+        });
+        var mapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               //url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                url: 'http://218.205.125.142:8001/{z}/{x}/{y}.png'
+               //url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+           })
+        });
+        var map = new ol.Map({
+           target: 'map',
+           layers: [mapLayer],
+           //projection: new ol.proj("EPSG:4326"),
+           //displayProjection: new ol.proj("EPSG:4326"),
+           view: mapView
+        });
+        var showInfo;
+        var shipLabelLayer;
+        var container = document.getElementById("popup");
+        var content = document.getElementById("popup-content");
+        var popupCloser = document.getElementById("popup-closer");
+        var viewport = map.getViewport();
+        var weather_chart_flag = 0;
+        var weather_log = 400;
+        var weather_lat = 400;
+        {#$(viewport).append('<div class="ship-select">选择船只mmsi<select id="ship-select"><option>无船只</option></select></div>' +#}
+        {#      '<div class="confirm-button"><input type="submit" class="submit-button" id="search" value="查询"/></div>' +#}
+        {#      '<div class="left-precision-label">精度5km*5km</div>' +#}
+        {#      '<div class="right-precision-label">10km*10km</div>' +#}
+        {#      '<div class="rangeContainer"><input id="slider" type="range" min="5" max="10" step="5" value="5" class="rangebar"/></div>' +#}
+        {#      '<div id="sea-map-label" class="sea-map-label">海图</div>' +#}
+        {#      '<div id="star-map-label" class="star-map-label">卫星图</div>' +#}
+        {#      '<div id="map-label" class="map-label">地图</div>'#}
+        {#        + '<div class="legend"><img src="/static/img/ship_legend.jpg" height="120" width="120"/></div>'#}
+        {#       // +'<div id="triangle"></div>'#}
+        {#);#}
+        $(viewport).append('<div class="ship-select">选择船只mmsi<select id="ship-select"><option>无船只</option></div>'+
+              '<div class="confirm-button"><input type="submit" class="submit-button" id="search" value="查询"/></div>' +
+              '<div class="left-precision-label">精度5km*5km</div>' +
+              '<div class="right-precision-label">10km*10km</div>' +
+              '<div class="rangeContainer"><input id="slider" type="range" min="5" max="10" step="5" value="5" class="rangebar"/></div>' +
+              '<div id="sea-map-label" class="sea-map-label">海图</div>' +
+              '<div id="star-map-label" class="star-map-label">卫星图</div>' +
+              '<div id="map-label" class="map-label">地图</div>'
+                + '<div class="legend"><img src="/static/img/ship_legend.jpg" height="120" width="120"/></div>'
+               // +'<div id="triangle"></div>'
+        );
+        // 监听按钮点击事件，执行相关操作
+        var overlay = new ol.Overlay({
+         //设置弹出框的容器
+        element: container,
+        //是否自动平移，即假如标记在屏幕边缘，弹出时自动平移地图使弹出框完全可见
+        autoPan: true
+      });
+        popupCloser.onclick = function() {
+        overlay.setPosition(undefined);
+        popupCloser.blur();
+        return false;
+      };
+        var colorList=["green","red","yellow","orange","pink",
+                     "purple","indigo","cyan","teal","auqamarin",
+                     "blue","Lime","olive","brown","maroon",
+      "greenyellow", "lightgreen","darkcyan","skyblue","deeppink"]
+        var features = [];
+        var shipdata = {{all_ships|safe}};
+        var index = 0;
+        var cur_zoom = map.getView().getZoom();
+        deleteOption(0);
+        history_layers.push(showAllShips(1));
+        for (var i in shipdata) {
+                addOption(i);
+        }
+        var shiptype_dicts={0:"客船", 1:"货船",2:"邮轮",3:"公务船",4:"危险货物",5:"其他"}
+
+
+        $(document).ready(function() {
+
+          document.getElementById('sea-map-label').onclick = function() {
+          //map.removeLayer(mapLayer);
+          //map.addLayer(openSeaMapLayer);
+          var newmapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               //url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                 //url: 'http://124.193.165.122:8083/{z}/{x}/{y}.png'
+               url: 'http://218.205.125.142:8001/{z}/{x}/{y}.png'
+               //url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+           })
+         });
+          var layers = map.getLayerGroup().getLayers();
+        layers.clear();
+          map.removeLayer(mapLayer);
+          map.addLayer(newmapLayer);
+          addAllLayer();
+
+      }
+          document.getElementById('star-map-label').onclick = function() {
+          var newmapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               //url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                 //url: 'http://124.193.165.122:8083/{z}/{x}/{y}.png'
+               url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+           })
+         });
+          var layers = map.getLayerGroup().getLayers();
+        layers.clear();
+          map.removeLayer(mapLayer);
+          map.addLayer(newmapLayer);
+          addAllLayer();
+      }
+          document.getElementById('map-label').onclick = function() {
+          var newmapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                 //url: 'http://124.193.165.122:8083/{z}/{x}/{y}.png'
+               //url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+           })
+         });
+          var layers = map.getLayerGroup().getLayers();
+        layers.clear();
+          map.removeLayer(mapLayer);
+          map.addLayer(newmapLayer);
+          addAllLayer();
+      }
+          document.getElementById('slider').onclick = function () {
+            $.ajax({
+               url : 'ship/get_ship_weather', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {　　　　　　　　　　　
+　　　　　　　　  'ship_name' : "XIN HAI HU",　 //getShipName()
+                'precision':document.getElementById('slider').value,
+                'mmsi': getmmsiName() },
+　　　　        dataType : 'json',
+　　　　        success: function(res){　　　
+　　　　　　      data =res.ship;　
+                weather_chart_flag = res.flag;
+
+                if (res.flag == 1) {
+                    shipDetails = "船名：" + data.name +
+                        "<br>船员信息："+
+                        "<br>位置："+ data.location ;/*+
+                        "<br>船只类型：" +data.typekey +
+                        "<br>船长：" +
+                        "<br>船宽：" + data.breadth +
+                        "<br>吃水深度：" + data.depth +
+                            "<br>航向："+
+                            "<br>速度：" +data.speed;*/
+                    //shipLabelLayer = showShipLabel(data.location, shipDetails);
+                    weather_log = data.location[0];
+                    weather_lat = data.location[1];
+                    showShipWeather(res.detail);
+                    weather_chart = res.chart;
+                    ship_temperature_chart();
+                }　
+                else {
+                    //map.removeLayer(shipLabelLayer);
+                    clearShipWeather();
+                    clear_ship_chart();
+                    if (history_layers.length > 1)
+                            history_layers.pop();
+                    alert("该船只不在气象服务范围内，请选择其他船只查询");
+
+                }
+　　　　　　  }
+
+　　　　    });
+       }
+          document.getElementById('search').onclick = function () {
+                $.ajax({
+               url : 'ship/get_ship_weather', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {　　　　　　　　　　　
+　　　　　　　　  'ship_name' : "XIN HAI HU",　 //getShipName()
+                'precision':document.getElementById('slider').value,
+                'mmsi': getmmsiName()                　　　　　　
+　　　　　　  　　},
+　　　　        dataType : 'json',
+　　　　        success: function(res){　　　
+　　　　　　      data =res.ship;　
+                weather_chart_flag = res.flag;
+
+                if (res.flag == 1) {
+                    /*shipDetails = "船名：" + data.name+
+                        "<br>船员信息："+
+                        "<br>位置："+ data.location; /*+
+                        "<br>船只类型：" +data.typekey +
+                        "<br>船长：" +
+                        "<br>船宽：" + data.breadth +
+                        "<br>吃水深度：" + data.depth +
+                            "<br>航向："+
+                            "<br>速度：" +data.speed;
+                    shipLabelLayer = showShipLabel(data.location, shipDetails);*/
+                    map.removeLayer(shipLabelLayer);
+                    var cor = [parseFloat(res.mmsi_ship.lon), parseFloat(res.mmsi_ship.lat)];
+                    cor = ol.proj.transform( cor,'EPSG:4326','EPSG:3857');
+                    mapView.setCenter(cor); //new ol.proj.toLonLat(cor, 'EPSG:4326')
+                    map.render();
+                    shipLabelLayer = showShipLabel(cor, "name");
+                    overlay.setPosition(cor);
+                    /*content.innerHTML = "mmsi编号:" + res.mmsi_ship.mmsi +
+                        "<br>经度:" + res.mmsi_ship.lon +
+                        "<br>纬度:" + res.mmsi_ship.lat +
+                        "<br>航迹向:" + res.mmsi_ship.cog +
+                        "<br>船舶类型:" + shiptype_dicts[res.mmsi_ship.ship_type];*/
+
+                    content.innerHTML = "<table>" +
+                            "  <tr>" +
+                            "    <th>船名:" + "无</th>" +
+                            "    <th></th>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>MMSI:" + res.mmsi_ship.mmsi + "</td>" +
+                            "    <td>航艏向:" + "无</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>呼号:" + "无</td>" +
+                            "    <td>航迹向:" + res.mmsi_ship.cog + "&#176</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>IMO:" + "无</td>" +
+                            "    <td>航速:" + "无</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>类型:" + shiptype_dicts[res.mmsi_ship.ship_type] + "</td>" +
+                            "    <td>经度:" +res.mmsi_ship.lon+"&#176</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>状态:" + "无</td>" +
+                            "    <td>纬度:" + res.mmsi_ship.lat +"&#176</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>船长:" + "无</td>" +
+                            "    <td>目的地:" + "无</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>船宽:" + "无</td>" +
+                            "    <td>上报时间:" + "无</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>吃水:" +  "无</td>" +
+                            "    <td></td>" +
+                            "  </tr>" +
+                            "</table>"
+                    if (Object.keys(res.ship_show_info).length > 0) {
+
+                        var ship_show_info_keys = Object.keys(res.ship_show_info);
+                        for (var ii=0; ii<ship_show_info_keys.length; ii++) {
+                            if (res.ship_show_info[ship_show_info_keys[ii]] == '')
+                                res.ship_show_info[ship_show_info_keys[ii]]="无"
+                        }
+                        if (res.ship_show_info.true_head != "无")
+                            res.ship_show_info.true_head += "&#176";
+                        if (res.ship_show_info.cog != "无")
+                            res.ship_show_info.cog += "&#176";
+                        if (res.ship_show_info.sog != "无")
+                            res.ship_show_info.sog += "节";
+                        if (res.ship_show_info.length != "无")
+                            res.ship_show_info.length += "米";
+                        if (res.ship_show_info.width != "无")
+                            res.ship_show_info.width += "米";
+                        if (res.ship_show_info.draught != "无")
+                            res.ship_show_info.draught += "米";
+                        if (res.ship_show_info.time != "无")
+                            res.ship_show_info.time = new Date(parseInt(res.ship_show_info.time) * 1000).toLocaleString().replace(/:\d{1,2}$/,' ');
+
+                        content.innerHTML = "<table>" +
+                            "  <tr>" +
+                            "    <th>船名:" + res.ship_show_info.ship_name + "</th>" +
+                            "    <th></th>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>MMSI:" + res.ship_show_info.i + "</td>" +
+                            "    <td>航艏向:" + res.ship_show_info.true_head + "</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>呼号:" + res.ship_show_info.call_sign + "</td>" +
+                            "    <td>航迹向:" + res.ship_show_info.cog + "</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>IMO:" + res.ship_show_info.imo + "</td>" +
+                            "    <td>航速:" + res.ship_show_info.sog + "</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>类型:" + shiptype_dicts[res.mmsi_ship.ship_type] + "</td>" +
+                            "    <td>经度:" +res.mmsi_ship.lon+"&#176</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>状态:" + res.ship_show_info.nav_status + "</td>" +
+                            "    <td>纬度:" + res.mmsi_ship.lat +"&#176</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>船长:" + res.ship_show_info.length + "</td>" +
+                            "    <td>目的地:" + res.ship_show_info.dest + "</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>船宽:" + res.ship_show_info.width + "</td>" +
+                            "    <td>上报时间:" + res.ship_show_info.time + "</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>吃水:" + res.ship_show_info.draught + "</td>" +
+                            "    <td></td>" +
+                            "  </tr>" +
+                            "</table>"
+                    }
+                    map.addOverlay(overlay);
+
+                    weather_log = data.location[0];
+                    weather_lat = data.location[1];
+
+                    showShipWeather(res.detail);
+                    weather_chart = res.chart;
+                    ship_temperature_chart();
+                }　
+                else {
+                    map.removeLayer(shipLabelLayer);
+                    clearShipWeather();
+                    clear_ship_chart();
+                    if (history_layers.length > 1)
+                            history_layers.pop();
+                    alert("该船只不在气象服务范围内，请选择其他船只查询");
+
+                }
+　　　　　　  }
+
+　　　　    });
+       }
+           //(\xB0C)
+          $.ajax({
+               url : 'ship/get_ship_weather', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {　　　　　　　　　　　
+                'precision':document.getElementById('slider').value,
+                'ship_name' : "XIN HAI HU",　 //getShipName()
+                'mmsi': getmmsiName()      //           　　　　　　　
+　　　　　　  　 },
+　　　　        dataType : 'json',
+　　　　        success: function(data){　
+                   weather_chart_flag = data.flag;
+                   if (data.flag) {
+                       showShipWeather(data.detail);
+                        weather_chart = data.chart;
+                       weather_log = data.ship.location[0];
+                       weather_lat = data.ship.location[1];
+                       ship_temperature_chart();
+
+                   }　else {
+                       clearShipWeather();
+                       clear_ship_chart();
+                       if (history_layers.length > 1)
+                            history_layers.pop();
+                   }
+                   updateMapSize();
+　　　　　　  }
+
+　　　　    });
+
+
+
+
+           var obj = document.getElementById("typhoon_warning");
+           var data = JSON.parse(JSON.stringify({{typhoon_warning|safe}}[0]));
+           obj.innerHTML = data.warning;
+
+           window.addEventListener('resize', function() {
+                var minZoom = getMinZoom();
+                if (minZoom !== mapView.getMinZoom()) {
+                  mapView.setMinZoom(minZoom);
+                }
+           })
+
+           updateMapSize();
+
+        });
+
+
+        map.on('click', function(evt) {
+            //alert("pointermove");
+            if (evt.dragging) {
+                return;
+            }
+            var pixel = map.getEventPixel(evt.originalEvent);
+            var feature = map.forEachFeatureAtPixel(pixel, function (feature) {
+                return feature;});
+            if (feature) {
+                var coordinate = evt.coordinate;
+                setmmsiName(feature.get("name"));
+                $.ajax({
+               url : 'ship/get_ship_weather', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {　　　　　　　　　　　
+　　　　　　　　  'ship_name' : "XIN HAI HU",　 //getShipName()
+                'precision':document.getElementById('slider').value,
+                'mmsi': feature.get("name")              　　　　　　
+　　　　　　  　　},
+　　　　        dataType : 'json',
+　　　　        success: function(res){　　　
+　　　　　　      data =res.ship;　
+                weather_chart_flag = res.flag;
+
+                if (res.flag == 1) {
+                    /*shipDetails = "船名：" + data.name+
+                        "<br>船员信息："+
+                        "<br>位置："+ data.location; /*+
+                        "<br>船只类型：" +data.typekey +
+                        "<br>船长：" +
+                        "<br>船宽：" + data.breadth +
+                        "<br>吃水深度：" + data.depth +
+                            "<br>航向："+
+                            "<br>速度：" +data.speed;
+                    shipLabelLayer = showShipLabel(data.location, shipDetails);*/
+                    map.removeLayer(shipLabelLayer);
+                    var cor = [parseFloat(res.mmsi_ship.lon), parseFloat(res.mmsi_ship.lat)];
+                    cor = ol.proj.transform( cor,'EPSG:4326','EPSG:3857');
+                    mapView.setCenter(cor); //new ol.proj.toLonLat(cor, 'EPSG:4326')
+                    map.render();
+                    shipLabelLayer = showShipLabel(cor, "name");
+                    overlay.setPosition(cor);
+                    content.innerHTML = "<table>" +
+                            "  <tr>" +
+                            "    <th>船名:" + "无</th>" +
+                            "    <th></th>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>MMSI:" + res.mmsi_ship.mmsi + "</td>" +
+                            "    <td>航艏向:" + "无</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>呼号:" + "无</td>" +
+                            "    <td>航迹向:" + res.mmsi_ship.cog + "&#176</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>IMO:" + "无</td>" +
+                            "    <td>航速:" + "无</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>类型:" + shiptype_dicts[res.mmsi_ship.ship_type] + "</td>" +
+                            "    <td>经度:" +res.mmsi_ship.lon+"&#176</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>状态:" + "无</td>" +
+                            "    <td>纬度:" + res.mmsi_ship.lat +"&#176</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>船长:" + "无</td>" +
+                            "    <td>目的地:" + "无</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>船宽:" + "无</td>" +
+                            "    <td>上报时间:" + "无</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>吃水:" +  "无</td>" +
+                            "    <td></td>" +
+                            "  </tr>" +
+                            "</table>"
+                    if (Object.keys(res.ship_show_info).length > 0) {
+
+                        var ship_show_info_keys = Object.keys(res.ship_show_info);
+                        for (var ii=0; ii<ship_show_info_keys.length; ii++) {
+                            if (res.ship_show_info[ship_show_info_keys[ii]] == '')
+                                res.ship_show_info[ship_show_info_keys[ii]]="无"
+                        }
+                        if (res.ship_show_info.true_head != "无")
+                            res.ship_show_info.true_head += "&#176";
+                        if (res.ship_show_info.cog != "无")
+                            res.ship_show_info.cog += "&#176";
+                        if (res.ship_show_info.sog != "无")
+                            res.ship_show_info.sog += "节";
+                        if (res.ship_show_info.length != "无")
+                            res.ship_show_info.length += "米";
+                        if (res.ship_show_info.width != "无")
+                            res.ship_show_info.width += "米";
+                        if (res.ship_show_info.draught != "无")
+                            res.ship_show_info.draught += "米";
+                        if (res.ship_show_info.time != "无")
+                            res.ship_show_info.time = new Date(parseInt(res.ship_show_info.time) * 1000).toLocaleString().replace(/:\d{1,2}$/,' ');
+
+                        content.innerHTML = "<table>" +
+                            "  <tr>" +
+                            "    <th>船名:" + res.ship_show_info.ship_name + "</th>" +
+                            "    <th></th>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>MMSI:" + res.ship_show_info.i + "</td>" +
+                            "    <td>航艏向:" + res.ship_show_info.true_head + "</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>呼号:" + res.ship_show_info.call_sign + "</td>" +
+                            "    <td>航迹向:" + res.ship_show_info.cog + "</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>IMO:" + res.ship_show_info.imo + "</td>" +
+                            "    <td>航速:" + res.ship_show_info.sog + "</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>类型:" + shiptype_dicts[res.mmsi_ship.ship_type] + "</td>" +
+                            "    <td>经度:" +res.mmsi_ship.lon+"&#176</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>状态:" + res.ship_show_info.nav_status + "</td>" +
+                            "    <td>纬度:" + res.mmsi_ship.lat +"&#176</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>船长:" + res.ship_show_info.length + "</td>" +
+                            "    <td>目的地:" + res.ship_show_info.dest + "</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>船宽:" + res.ship_show_info.width + "</td>" +
+                            "    <td>上报时间:" + res.ship_show_info.time + "</td>" +
+                            "  </tr>" +
+                            "  <tr>" +
+                            "    <td>吃水:" + res.ship_show_info.draught + "</td>" +
+                            "    <td></td>" +
+                            "  </tr>" +
+                            "</table>"
+                    }
+                    map.addOverlay(overlay);
+
+                    weather_log = data.location[0];
+                    weather_lat = data.location[1];
+
+                    showShipWeather(res.detail);
+                    weather_chart = res.chart;
+                    ship_temperature_chart();
+                }　
+                else {
+                    map.removeLayer(shipLabelLayer);
+                    clearShipWeather();
+                    clear_ship_chart();
+                    if (history_layers.length > 1)
+                            history_layers.pop();
+                    alert("该船只不在气象服务范围内，请选择其他船只查询");
+
+                }
+　　　　　　  }
+
+　　　　    });
+            }
+        });
+        // display popup on click
+        /*map.on('click', function(evt) {
+        var feature = map.forEachFeatureAtPixel(evt.pixel,
+            function(feature) {
+              return feature;
+            });
+        if (feature) {
+            var coordinates = feature.getGeometry().getCoordinates();
+            overlay.setPosition(coordinates);
+            content.innerHTML = showInfo;
+            map.addOverlay(overlay);
+        }
+      });*/
+        /*var data = JSON.parse(JSON.stringify({{ship_names|safe}}));
+            if (data.length > 0)
+                deleteOption(0);
+            for (x in data) {
+             addOption(data[x]);
+            }*/
+        function ship_temperature_chart() {
+          if (!weather_chart)
+              return;
+          ship_chart(weather_chart.temperature_chart[0], "\xB0C");
+      }
+        function ship_humidity_chart() {
+          if (!weather_chart)
+              return;
+           //var json = {{ship_humidity_chart|safe}}[0];
+          if(weather_chart)
+              ship_chart(weather_chart.humidity_chart[0], "%");
+
+       }
+        function ship_wind_speed_chart() {
+          if (!weather_chart)
+              return;
+           //var json = {{ship_wind_speed_chart|safe}}[0];
+           ship_chart(weather_chart.wind_speed_chart[0], "m/s");
+
+      }
+        function ship_wind_component_chart() {
+          if (!weather_chart)
+              return;
+          var json = JSON.parse(JSON.stringify(weather_chart.wind_component_chart[0]));
+            var chart_data = json.series[0].data;
+            json.series[0].pointStart=Date.UTC(2017, 1, 1);
+
+		   for (x in json.series[0].data)
+		   {
+		        chart_data[x].y = parseFloat(chart_data[x].y);
+		   }
+
+		   json.yAxis.labels = {
+            formatter: function(){
+            return this.value + "度";
+            }
+            };
+            json.xAxis.labels = {
+            formatter: function(){
+                    var d = new Date(this.value);
+                    var s = '<b>' + d.getUTCMonth() + '月' + d.getUTCDate() + '日'
+                    + d.getUTCHours() + '时' + '</b>';
+                    return s;
+            }
+            };
+            json.tooltip = {
+                formatter: function() {
+                    var d = new Date(this.point.x);
+                    var s = '<b>' + d.getUTCFullYear() + '年' + d.getUTCMonth() + '月' + d.getUTCDate() + '日'
+                    + d.getUTCHours() + '时' + '</b>,' + getDirectFromAngle(this.point.y) + "方向";
+                    return s;
+                }
+            };
+
+		   json.series[0].data = chart_data;
+		   json.legend.enabled=false;
+            $('#chart_container').highcharts(json);
+      }
+        function ship_precipitation_chart() {
+          if (!weather_chart)
+              return;
+           //var json = {{ship_precipitation_chart|safe}}[0];
+           ship_chart(weather_chart.precipitation_chart[0], "mm");
+
+      }
+        function ship_sea_wave_chart() {
+          if (!weather_chart)
+              return;
+           //var json = {{ship_sea_wave_chart|safe}}[0];
+           ship_chart(weather_chart.sea_wave_chart[0], "m");
+
+      }
+        function ship_height_swell_chart() {
+          if (!weather_chart)
+              return;
+           //var json = {{ship_height_swell_chart|safe}}[0];
+           ship_chart(weather_chart.height_swell_chart[0], "m");
+
+      }
+        function ship_ocean_current_h_chart() {
+          if (!weather_chart)
+              return;
+           //var json = {{ship_ocean_current_h_chart|safe}}[0];
+           ship_chart(weather_chart.ocean_current_h_chart[0], "m");
+
+      }
+        function ship_visibility_chart() {
+          if (!weather_chart)
+              return;
+           //var json = {{ship_visibility_chart|safe}}[0];
+           ship_chart(weather_chart.visibility_chart[0], "m");
+
+      }
+        function clear_ship_chart() {
+            document.getElementById("ship-chart-title").innerHTML= "天气预报-没有查询在气象范围内的船只";
+            document.getElementById("chart_container").innerHTML = "";
+
+      }
+        function ship_chart(json, ylabel) {
+          //alert(json.series);
+		   var nowDate = new Date();
+		   json.series[0].pointStart=Date.UTC(2017, nowDate.getMonth()+1, nowDate.getDate(), nowDate.getHours());
+		   var chart_data = JSON.parse(JSON.stringify(json)).series[0].data;
+
+		   for (x in chart_data)
+		   {
+		        chart_data[x] = parseFloat(chart_data[x]);
+		   }
+
+		   json.series[0].data = chart_data;
+		   json.yAxis.labels = {
+            formatter: function(){
+            return this.value + ylabel;
+            }
+            };
+            json.xAxis.labels = {
+            formatter: function(){
+                    var d = new Date(this.value);
+                    var s = '<b>' + d.getUTCMonth() + '月' + d.getUTCDate() + '日'
+                    + d.getUTCHours() + '时' + '</b>';
+                    return s;
+            }
+            };
+            json.tooltip = {
+                formatter: function() {
+                    var d = new Date(this.point.x);
+                    var s = '<b>' + d.getUTCFullYear() + '年' + d.getUTCMonth() + '月' + d.getUTCDate() + '日'
+                    + d.getUTCHours() + '时' + '</b>,' + this.point.y + ylabel;
+                    return s;
+                }
+            };
+            json["plotOptions"] = {
+                    area: {
+                        fillColor: {
+                            linearGradient: {
+                                x1: 0,
+                                y1: 0,
+                                x2: 0,
+                                y2: 1
+                            },
+                            stops: [
+                                [0, Highcharts.getOptions().colors[0]],
+                                [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                            ]
+                        },
+                        marker: {
+                            radius: 2
+                        },
+                        lineWidth: 1,
+                        states: {
+                            hover: {
+                                lineWidth: 1
+                            }
+                        },
+                        threshold: null
+                    }
+            };
+            //pointFormat='{point.x}.getFullYear():{point.y}';
+            json.legend.enabled=false;
+
+            $('#chart_container').highcharts(json);
+
+      }
+        function getDirectFromAngle(angle_str) {
+            //alert(angle_str)
+         var angle_float = parseFloat(angle_str);
+         var direct_list = ['北','北东北','东北','东东北',
+                            '东','东东南','东南','南东南',
+                            '南','南西南','西南','西西南',
+                            '西','西西北','西北','北西北'];
+         var i;
+         for (i = 0; i < 16; i++) {
+            if (angle_float > (348.75 + i*22.5)%360 && angle_float <= (11.25 + i*22.5))
+                break;
+         }
+         if ( i >=0 && i <=15)
+            return direct_list[i];
+         return direct_list[0]
+     }
+        /*function getDirectFlagFromAngle(angle_str) {
+         var angle_float = parseFloat(angle_str);
+         var direct_list = ['N','NEN','EN','EEN',
+                            'E','EES','ES','SES',
+                            'S','SWS','WS','WWS',
+                            'W','WWN','WN','NWN'];
+         var i;
+         for (i = 0; i < 12; i++) {
+            if (angle_float > (348.75 + i*22.5)%360 && angle_float <= (11.25 + i*22.5))
+                break;
+         }
+         return direct_list[i];
+     }*/
+        function showShipWeather(weather_data) {
+           document.getElementById("td_temperature").innerHTML = weather_data.temperature + "\xB0C";
+           document.getElementById("td_humidity").innerHTML = weather_data.humidity+"%";
+           document.getElementById("td_wind_speed").innerHTML = weather_data.wind_speed+"m/s";
+           document.getElementById("td_wind_component").innerHTML = getDirectFromAngle(weather_data.wind_component);
+           document.getElementById("td_precipitation").innerHTML = weather_data.precipitation + "mm";
+           document.getElementById("td_visibility").innerHTML = weather_data.visibility+"m";
+           document.getElementById("td_sea_wave_high").innerHTML = weather_data.sea_wave+"m";
+
+           document.getElementById("td_swell_height").innerHTML = weather_data.height_swell+"m|" + weather_data.period_swell+"s";
+           document.getElementById("td_swell_period").innerHTML =  getDirectFromAngle(weather_data.direction_swell);
+           //document.getElementById("td_swell_direction").innerHTML = weather_data.direction_swell+"度";
+
+           document.getElementById("td_ocean_h").innerHTML = weather_data.ocean_current_h + "m|"
+          + weather_data.ocean_current_t + "\xB0C" ;
+          document.getElementById("td_ocean_t").innerHTML = weather_data.ocean_current_u + "cm/s|" + weather_data.ocean_current_v + "cm/s";
+          document.getElementById("td_ocean_u").innerHTML = weather_data.ocean_current_w + "cm/s";
+     }
+        function clearShipWeather() {
+           document.getElementById("td_temperature").innerHTML= "";
+           document.getElementById("td_humidity").innerHTML = "";
+           document.getElementById("td_wind_speed").innerHTML = "";
+           document.getElementById("td_wind_component").innerHTML = "";
+           document.getElementById("td_precipitation").innerHTML = "";
+           document.getElementById("td_visibility").innerHTML = "";
+           document.getElementById("td_sea_wave_high").innerHTML = "";
+
+           document.getElementById("td_swell_height").innerHTML = "";
+           document.getElementById("td_swell_period").innerHTML = "";
+           //document.getElementById("td_swell_direction").innerHTML = weather_data.direction_swell+"度";
+
+           document.getElementById("td_ocean_h").innerHTML = "";
+          document.getElementById("td_ocean_t").innerHTML = "";
+         document.getElementById("td_ocean_u").innerHTML = "";
+     }
+        function showShipLabel(location, info) {
+         var iconFeature = new ol.Feature({
+            geometry: new ol.geom.Point(location, "XY"),
+            name: 'Null Island',
+            population: 4000,
+            rainfall: 500
+          });
+
+          var iconStyle = new ol.style.Style({
+            image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+              anchor: [0.5, 46],
+              anchorXUnits: 'fraction',
+              anchorYUnits: 'pixels',
+              //src: 'https://openlayers.org/en/v4.5.0/examples/data/icon.png'
+                src: '/static/img/climate_img/icon.png'
+            }))
+          });
+
+          iconFeature.setStyle(iconStyle);
+
+          var vectorSource = new ol.source.Vector({
+            features: [iconFeature]
+          });
+
+          var vectorLayer = new ol.layer.Vector({
+            source: vectorSource
+          });
+          map.addLayer(vectorLayer);
+          history_layers.push(vectorLayer);
+          showInfo = info;
+          return vectorLayer;
+     }
+        function addOption(name) {
+                var obj = document.getElementById("ship-select");
+                obj.options.add(new Option(name, name));
+            }
+        function deleteOption(i) {
+                var obj = document.getElementById("ship-select");
+                obj.options.remove(i);
+            }
+        function getShipName(){
+                var myselect = document.getElementById("ship-select");
+                var index = myselect.selectedIndex;
+                if (index >= 0)
+                    return myselect.options[index].value;
+                return "";
+            }
+        function getmmsiName(){
+                var myselect = document.getElementById("ship-select");
+                var index = myselect.selectedIndex;
+                if (index >= 0)
+                    return myselect.options[index].value;
+                return "";
+            }
+        function setmmsiName(ship_mmsi){
+            document.getElementById("ship-select").value=ship_mmsi;
+        }
+        function setTriangleStyle(color) {
+              var stroke = new ol.style.Stroke({color: 'black', width: 1});
+              var fill = new ol.style.Fill({color: color});
+              var triangle_style = new ol.style.Style({
+                  image: new ol.style.RegularShape({
+                      fill: fill,
+                      stroke: stroke,
+                      points: 3,
+                      radius: 8,
+                      rotation: Math.PI / 4,
+                      angle: 0
+                  })
+              });
+              return triangle_style;
+        }
+
+        function setPointStyle(color) {
+              var stroke = new ol.style.Stroke({color: 'green', width: 0});
+              var fill = new ol.style.Fill({color: color});
+              var point_style = new ol.style.Style({
+                  image: new ol.style.Circle({
+                      fill: fill,
+                      stroke: stroke,
+                      radius: 2
+                  })
+              });
+              return point_style;
+        }
+
+        //https://blog.csdn.net/jingtian678/article/details/69371076/
+        function addAllLayer(){
+          for (var i = 0; i < history_layers.length; i++) {
+                  map.addLayer(history_layers[i]);
+          }
+    }
+        function getMinZoom() {
+              var viewport = document.getElementById('map');
+            var width = viewport.clientWidth;
+            var height = viewport.clientHeight;
+            var key_v = Math.max(width, height)
+            return Math.ceil(Math.LOG2E * Math.log(key_v / 256));
+        }
+
+        function showAllShips(pointflag) {
+                index = 0;
+                for (var i  in shipdata) {
+                    var coordinate = [parseFloat(shipdata[i][0]), parseFloat(shipdata[i][1])];
+                      //coordinate = ol.proj.transform(coordinate,'EPSG:4326','EPSG:3857');
+                        features[index] = new ol.Feature({
+                            geometry: new ol.geom.Point(ol.proj.transform(coordinate ,'EPSG:4326','EPSG:3857'),"XY"),
+                            name: i});
+                        if (pointflag)
+                            features[index].setStyle(setPointStyle(shipdata[i][2]));  //colorList[i]
+                        else
+                            features[index].setStyle(setTriangleStyle(shipdata[i][2]));
+                         index+=1;
+                }
+                /*for (var i = 0; i < shipdata["types"].length; i++) {
+                  var type_ship = shipdata["type_ships"][shipdata["types"][i]];
+                  var show_max_ships = type_ship.length > 400?400:type_ship.length;
+                  for (var j = 0; j < show_max_ships; j++) {
+                      var coordinate = [parseFloat(type_ship[j][1]), parseFloat(type_ship[j][2])];
+                      //coordinate = ol.proj.transform(coordinate,'EPSG:4326','EPSG:3857');
+                        features[index] = new ol.Feature({
+                            geometry: new ol.geom.Point(ol.proj.transform(coordinate ,'EPSG:4326','EPSG:3857'),"XY"),
+                            name: type_ship[j][0]});
+                        if (pointflag)
+                            features[index].setStyle(setPointStyle("green"));  //colorList[i]
+                        else
+                            features[index].setStyle(setTriangleStyle("green"));
+                         index+=1;
+                  }
+              }*/
+            /*for (var i = 0; i < 20; ++i) {
+            var coordinate = [120,20+i*0.5];
+            features[i] = new ol.Feature(new ol.geom.Point(ol.proj.transform(coordinate ,'EPSG:4326','EPSG:3857'), "XY"));
+            features[i].setStyle(setTriangleStyle(colorList[i]));
+          }*/
+
+            var trisource = new ol.source.Vector({
+            features: features
+          });
+            var trivectorLayer = new ol.layer.Vector({
+            source: trisource,
+          });
+            map.addLayer(trivectorLayer);
+            return trivectorLayer;
+        }
+
+        function updateMapSize() {
+            var printSize = [$('.col-md-8').width(), $('.col-md-4').height()];
+            map.setSize(printSize);
+        }
+
+        map.on("moveend",function(e){
+            var zoom = map.getView().getZoom();  //获取当前地图的缩放级别
+            if(zoom >= 10 && cur_zoom < 10){
+                features = history_layers[0].getSource().getFeatures();
+                for (var i = 0; i < features.length; i++)
+                    features[i].setStyle(setTriangleStyle(shipdata[features[i].get("name")][2]))
+                cur_zoom = zoom;
+            }
+            if (cur_zoom >=10 && zoom < 10){
+                features = history_layers[0].getSource().getFeatures();
+                for (var i = 0; i < features.length; i++)
+                    features[i].setStyle(setPointStyle(shipdata[features[i].get("name")][2]))
+                cur_zoom = zoom;
+            }
+        });
+
+
+    </script>
+</body>
+</html>

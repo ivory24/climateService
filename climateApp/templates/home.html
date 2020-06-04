@@ -1,0 +1,1745 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+
+
+    <script type="text/javascript" src="{% static 'jquery/jquery-3.3.1.js' %}"></script>
+    <script type="text/javascript" src="{% static 'jquery/jquery-3.3.1.min.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.js' %}"></script>
+    <script src="{% static 'openlayers\openlayers_v4.5.0_ol.js' %}" type="text/javascript"></script>
+    <script type="text/javascript" src="{% static 'js/highcharts.js' %}"></script>
+
+    <link href="{% static 'bootstrap\css\bootstrap.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'bootstrap\css\bootstrap.min.css' %}" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="{% static 'openlayers\openlayers_v4.5.0_ol.css' %}" type="text/css">
+    <title>首页</title>
+    <style>
+        .map {
+            position: relative;
+       height: 100%;
+       width: 100%;
+     }
+      .ol-popup {
+      position: absolute;
+      background-color: white;
+      -webkit-filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+      filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #cccccc;
+      bottom: 12px;
+      left: -50px;
+      min-width: 250px;
+    }
+    .ol-popup:after, .ol-popup:before {
+      top: 100%;
+      border: solid transparent;
+      content: " ";
+      height: 0;
+      width: 0;
+      position: absolute;
+      pointer-events: none;
+    }
+    .ol-popup:after {
+      border-top-color: white;
+      border-width: 10px;
+      left: 48px;
+      margin-left: -10px;
+    }
+    .ol-popup:before {
+      border-top-color: #cccccc;
+      border-width: 11px;
+      left: 48px;
+      margin-left: -11px;
+    }
+    .ol-popup-closer {
+      text-decoration: none;
+      position: absolute;
+      top: 2px;
+      right: 8px;
+    }
+    .ol-popup-closer:after {
+      content: "x";
+    }
+
+    .panel-popover-title {
+        padding: 8px 14px;
+        margin: 0;
+        font-size: 14px;
+        background-color: dodgerblue;
+        border-bottom: 1px solid #ebebeb;
+        border-radius: 5px 5px 0 0;
+        color: white;
+    }
+    .panel-add-title {
+        padding: 8px 14px;
+        margin: 0;
+        font-size: 14px;
+        background-color: darkgray;
+        border-bottom: 1px solid #ebebeb;
+        border-radius: 5px 5px 0 0;
+        color: white;
+    }
+    .panel-info-title {
+        padding: 8px 14px;
+        margin: 0;
+        font-size: 14px;
+        background-color: darkgray;
+        border-bottom: 1px solid #ebebeb;
+        border-radius: 5px 5px 0 0;
+        color: white;
+    }
+        .sea-map-label {
+    position: absolute;
+    top: 10px;
+    right: 170px;
+    border: 1px;
+    border-color: #333;
+    background-color: #339999;
+    color: #fff;
+    box-shadow: 0px 0px 2px #666;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:80px;
+         text-align: center;
+    }
+     .star-map-label {
+    position: absolute;
+    top: 10px;
+    right: 90px;
+    border: 1px;
+    border-color: #333;
+    background-color: #339999;
+    color: #fff;
+    box-shadow: 0px 0px 2px #666;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:80px;
+         text-align: center;
+    }
+     .map-label {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border: 1px;
+    border-color: #333;
+    background-color: #339999;
+    color: #fff;
+    box-shadow: 0px 0px 2px #666;
+    cursor: pointer;
+    padding: 0 4px 0 4px;
+         width:80px;
+         text-align: center;
+    }
+    .weather-icon {
+        position: absolute;
+        top: 10px;
+        right: 50px;
+        cursor: pointer;
+    }
+    .legend {
+        position: absolute;
+        bottom: 150px;
+        right: 40px;
+        cursor: pointer;
+    }
+    .time-btn {
+        -webkit-border-radius: 20px;
+        -moz-border-radius: 20px;
+        border-radius: 20px;
+    }
+    .time-pos {
+        position: absolute;
+        top: 80px;
+        right: 50px;
+        cursor: pointer;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid" style="height: 100%">
+        <div class="row" >
+           <div class="nav navbar-header navbar-left">
+               <a class="navbar-brand">CSSC</a>
+           </div>
+            <div class="nav navbar-nav navbar-right" style="color:white">
+                <li><a href="/home">首页</a></li>
+                <li><a href="/seaway">航线气象</a></li>
+                <li><a href="/typhoon">台风预警</a></li>
+                <li><a href="/ship">船只气象</a></li>
+                <li><a href="/area">目标区域气象</a></li>
+                <li>
+                    <select style="margin-top: 12px; color: #000;" onchange="changeSystem()" id="system-select">
+                        <option value="transfer">江海联运</option>
+                        <option value="manage">海事监管</option>
+                        <option selected="selected" value="weather">精细化气象</option>
+                        <option value="ecology">海岸线生态</option>
+                    </select>
+                </li>
+                <!--<li><a><span class="glyphicon glyphicon-user"></span></a></li>
+                <li><a>admin</a></li>-->
+                <li><a><span class="glyphicon glyphicon-log-out" style="margin-right: 20px" onclick="logout()"></span></a></li>
+            </div>
+        </div>
+        <div class="row">
+            <div id="map" class="map">
+                <div id="popup" class="ol-popup">
+                    <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+                    <div id="popup-content"></div>
+                </div>
+                <div id="popup-prompt" class="ol-popup">
+                    <div id="popup-prompt-content"></div>
+                </div>
+                <div id="popup-tag"><div id="popup-tag-panel"></div></div>
+                <div id="popup-add-tag-panel"></div>
+                <div id="popup-tag-info-panel"></div>
+                <div id="popup-edit-tag-panel"></div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function logout(){
+            delCookie("token");
+            window.location.href="http://218.205.125.100/jfinal_sso/member/logout";
+        }
+        function getCookie(name)
+        {
+            var arr,reg=new RegExp("(^| )"+name+"=([^;]*)(;|$)");
+            if(arr=document.cookie.match(reg))
+                return unescape(arr[2]);
+            else
+                return null;
+        }
+        function delCookie(name)
+        {
+            var exp = new Date();
+            exp.setTime(exp.getTime() - 1);
+            var cval=getCookie(name);
+            if(cval!=null)
+                document.cookie= name + "="+cval+";expires="+exp.toGMTString();
+        }
+        function getQueryVariable(variable)
+        {
+           var query = window.location.search.substring(1);
+           var vars = query.split("&");
+           for (var i=0;i<vars.length;i++) {
+                   var pair = vars[i].split("=");
+                   if(pair[0] == variable){return pair[1];}
+           }
+           return(false);
+        }
+
+
+
+        var url = window.location.href;
+
+        if(url.indexOf("token") >= 0)
+            document.cookie = "token=" + getQueryVariable("token");
+
+        function changeSystem() {
+            var systemName = $('select  option:selected').val();
+            if (systemName == "transfer") {
+                window.location.href="http://218.205.125.144:9620" + "?" + document.cookie;
+            } else if (systemName == "manage") {
+                window.location.href="http://218.205.125.144:9630" + "?" + document.cookie;
+            } else if (systemName == "weather") {
+                window.location.href="http://218.205.125.147:8002/home" + "?" + document.cookie;
+            } else {
+                window.location.href="http://218.205.125.141:8090/zsngweb" + "?" + document.cookie;
+            }
+
+        }
+        //$('select  option:selected').val("weather");
+        $('.dropdown-toggle').dropdown();
+
+        var mapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               //url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+               url: 'http://218.205.125.142:8001/{z}/{x}/{y}.png'
+               //projection:ol.proj.get('EPSG:4326'),
+
+           })
+         });
+        var mapView = new ol.View({
+            projection:  "EPSG:3857", //"EPSG:4326",//地图坐标参考系
+            center: ol.proj.transform( [122,37] ,'EPSG:4326','EPSG:3857'),
+            zoom: 3.8,
+            minZoom:getMinZoom()
+           });
+        var map = new ol.Map({
+           target: document.getElementById('map'),
+           controls: ol.control.defaults({
+              attributionOptions: /** @type {olx.control.AttributionOptions} */ ({
+                collapsible: false
+              })
+            }),
+           view: mapView
+        });
+        map.addLayer(mapLayer);
+
+        var viewport = map.getViewport();
+          $(viewport).append('<div class="weather-icon">' +
+              '<table style="width:100%" class="border" rules="none">' +
+              '<tr align="center">' +
+              '<td onclick="showTemperatureDiagram()">温度</br><img src="/static/img/climate_img/1.png" style="width:50px; height: 50px"/></td>' +
+              '<td onclick="showHumidityDiagram()">湿度</br><img src="/static/img/climate_img/2.png" style="width:50px; height: 50px"/></td>' +
+              '<td onclick="showPrecipitationDiagram()">降雨量</br><img src="/static/img/climate_img/5.png" style="width:50px; height: 50px"/></td>' +
+              '<td onclick="showVisibilityDiagram()">能见度</br><img src="/static/img/climate_img/6.png" style="width:50px; height: 50px"/></td>' +
+              '<td onclick="showWindDirectionDiagram()">风向</br><img src="/static/img/climate_img/4.png" style="width:50px; height: 50px"/></td>' +
+              '<td onclick="showTagPanel()">添加标注</br><img src="/static/img/climate_img/10.png" style="width:50px; height: 50px"/></td>' +
+              '</tr></table></div>' +
+              '<div class="legend" id="map-legend"></div>' +
+              '<div class="time-pos"><button onclick="showTodayDiagram()" class="time-btn" style="margin-right: 30px" id="today-btn">今日海洋预报</button>' +
+              '<button onclick="showTomorrowDiagram()" class="time-btn" id="tomorrow-btn">明日海洋预报</button></div>');
+
+
+        // $(viewport).append('<div class="weather-icon"><img src="/static/img/climate_img/1.png" height="50" width="50" onclick="showTemperatureDiagram()"/>' +
+        //     '<img src="/static/img/climate_img/2.png" height="50" width="50"  onclick="showHumidityDiagram()"/>' +
+        //     '<img src="/static/img/climate_img/5.png" height="50" width="50" onclick="showPrecipitationDiagram()"/>' +
+        //     '<img src="/static/img/climate_img/6.png" height="50" width="50" onclick="showVisibilityDiagram()"/>' +
+        //     '<img src="/static/img/climate_img/4.png" height="50" width="50" onclick="showWindDirectionDiagram()"/>' +
+        //     '<img src="/static/img/climate_img/10.png" height="75" width="75" onclick="showTagPanel()"/></div>' +
+        //     '<div class="legend" id="map-legend"></div>');
+        //
+        //
+        //  <table style="width:100%" class="border" rules="none">
+        //                    <tr align="center">
+        //                        <td onclick="temperature_click()">温度</br>
+        //                            <img src="{% static 'img/climate_img/1.png' %}" style="width:50px; height: 50px"/></td>
+        //                        <td onclick="humidity_click()">湿度</br>
+        //                            <img src="{% static 'img/climate_img/2.png' %}" style="width:50px; height: 50px"/></td>
+        //                        <td onclick="wind_speed_click()">风速</br>
+        //                            <img src="{% static 'img/climate_img/3.png' %}" style="width:50px; height: 50px"/></td>
+        //                    </tr>
+        //                    <tr align="center">
+        //                        <td onclick="wind_component_click()">
+        //                            风向</br>
+        //                            <img src="{% static 'img/climate_img/4.png' %}" style="width:50px; height: 50px"/>
+        //                        </td>
+        //                        <td onclick="precipitation_click()">降水量</br>
+        //                            <img src="{% static 'img/climate_img/5.png' %}" style="width:50px; height: 50px"/></td>
+        //                        <td onclick="visibility_click()">能见度</br>
+        //                            <img src="{% static 'img/climate_img/6.png' %}" style="width:50px; height: 50px"/></td>
+        //                    </tr>
+        //                    <tr align="center">
+        //                        <td onclick="sea_wave_click()">浪</br>
+        //                            <img src="{% static 'img/climate_img/7.png' %}" style="width:50px; height: 50px"/></td>
+        //                        <td onclick="height_swell_click()">涌</br>
+        //                            <img src="{% static 'img/climate_img/8.png' %}" style="width:50px; height: 50px"/></td>
+        //                        <td onclick="ocean_current_h_click()">流</br>
+        //                            <img src="{% static 'img/climate_img/9.png' %}" style="width:50px; height: 50px"/></td>
+        //                    </tr>
+        //                </table>'''
+
+
+
+        var data;
+        var pointsLayer;
+        var windLayer;
+        var textLayer;
+
+        var ocean_ids= ["111", "112", "113", "114", "115"];
+
+        var unit_str = "\xB0C";
+
+        var attr_key = "wnd";
+
+        /**
+       * Elements that make up the popup.
+       */
+      var container = document.getElementById('popup');
+      var content = document.getElementById('popup-content');
+      var closer = document.getElementById('popup-closer');
+
+
+      var overlay = new ol.Overlay({
+         //设置弹出框的容器
+        element: container,
+        //是否自动平移，即假如标记在屏幕边缘，弹出时自动平移地图使弹出框完全可见
+        autoPan: true
+      });
+
+      map.addOverlay(overlay);
+
+      /**
+       * Add a click handler to hide the popup.
+       * @return {boolean} Don't follow the href.
+       */
+      closer.onclick = function() {
+        overlay.setPosition(undefined);
+        closer.blur();
+        return false;
+      };
+
+      map.on('click', function(evt) {
+            var feature = map.forEachFeatureAtPixel(evt.pixel,
+                function(feature) {
+                  return feature;
+                });
+            if (feature) {
+                var coordinate = evt.coordinate;
+                if (feature.getProperties()["id"] == "existed_tag") {
+                   showTag(feature.getProperties()["name"]);
+                }
+                else if (feature.getProperties()["name"] && attr_key!="none" && feature.getProperties()["id"])  {
+                    if(attr_key == "njd"){
+                         content.innerHTML =  feature.getProperties()["name"] +  "<br>" +
+                        feature.getProperties()["area"]  +  "<br>" +
+                        "气象属性：" + parseFloat(data[feature.getProperties()["id"]][attr_key])/1000+"Km";
+                    }
+                    else {
+                         content.innerHTML =  feature.getProperties()["name"] +  "<br>" +
+                        feature.getProperties()["area"]  +  "<br>" +
+                        "气象属性：" + data[feature.getProperties()["id"]][attr_key]+unit_str;
+                    }
+
+                    overlay.setPosition(coordinate);
+                }
+            }
+          });
+
+
+       var curDate = new Date();
+        function updateDate(delay) {
+            if (delay == 0) {
+                curDate = new Date();
+            }
+            if (delay == 1) {
+                curDate = new Date();
+                curDate = +curDate + 1000 * 60 * 60 * 24;
+　　             curDate = new Date(curDate);
+            }
+        }
+
+
+
+        $(document).ready(function() {
+
+            //$('.selectpicker').val('精细化气象');
+            //$('.selectpicker').selectpicker('val','精细化气象');
+
+
+            $.get("/static/geojson/all.json", function(response) {
+              response['cor'] ={
+                  'type': 'name',
+                  'properties': {
+                    'name': 'EPSG:3857'
+                  }
+                };
+              for (var i = 0; i < response['features'].length; i++) {
+                  for (var k = 0; k < response['features'][i]['geometry']['coordinates'].length; k++) {
+                      var coors = response['features'][i]['geometry']['coordinates'][k];
+                      var minLon=360, minLat=180, maxLon=-360, maxLat=-360;
+                      if ( response['features'][i]['geometry']["type"]== "MultiPolygon") {
+                          for (var j = 0; j < coors[0].length; j++) {
+                              var temp = coors[0][j];
+                              if (temp[0] > maxLon)
+                                  maxLon = temp[0].toFixed(2);
+                              if (temp[0] < minLon)
+                                  minLon = temp[0].toFixed(2);
+                              if (temp[1] > maxLat)
+                                  maxLat = temp[1].toFixed(2);
+                              if (temp[1] < minLat)
+                                  minLat = temp[1].toFixed(2);
+                              temp = [(temp[0]+360)%360.0, (temp[1]+360)%360.0]
+                              response['features'][i]['properties']['area'] = "经度范围：" + minLon + "&#176-" + maxLon+ "&#176<br>纬度范围：" +minLat+ "&#176-" +maxLat +"&#176";
+                              //alert(response['features'][i]['geometry']['coordinates'][j] );
+                              response['features'][i]['geometry']['coordinates'][k][0][j] = ol.proj.transform(temp, 'EPSG:4326', 'EPSG:3857');
+                          }
+                      } else {
+                          for (var j = 0; j < coors.length; j++) {
+                              var temp = coors[j];
+                              if (temp[0] > maxLon)
+                                  maxLon = temp[0].toFixed(2);
+                              if (temp[0] < minLon)
+                                  minLon = temp[0].toFixed(2);
+                              if (temp[1] > maxLat)
+                                  maxLat = temp[1].toFixed(2);
+                              if (temp[1] < minLat)
+                                  minLat = temp[1].toFixed(2);
+                              temp = [(temp[0]+360)%360.0, (temp[1]+360)%360.0]
+                              response['features'][i]['properties']['area'] = "经度范围：" + minLon + "&#176-" + maxLon+ "&#176<br>纬度范围：" +minLat+ "&#176-" +maxLat +"&#176";
+                              //alert(response['features'][i]['geometry']['coordinates'][j] );
+                              response['features'][i]['geometry']['coordinates'][k][j] = ol.proj.transform(temp, 'EPSG:4326', 'EPSG:3857');
+                          }
+                      }
+                  }
+              }
+
+              var vectorSource = new ol.source.Vector({
+               features: (new ol.format.GeoJSON()).readFeatures(response),
+
+              });
+
+
+              pointsLayer = new ol.layer.Vector({
+                    source: vectorSource,
+                    style: new ol.style.Style({
+                    fill: new ol.style.Fill({
+                        color: 'rgba(255, 255, 255, 0.6)'
+                    }),
+                    stroke: new ol.style.Stroke({
+                        color: '#319FD3',
+                        width: 0.5
+                    }),
+                   //text: new Text()
+                })
+              });
+
+
+              map.addLayer(pointsLayer);
+              map.render();
+              //pointsLayer.setVisible(true);
+              data = JSON.parse(JSON.stringify({{features_info|safe}}));
+              document.getElementById('today-btn').style.background = "orange";
+              document.getElementById('tomorrow-btn').style.background = "white";
+              showTemperatureDiagram();
+            });
+
+
+            //disableMove();
+        });
+
+        function showTodayDiagram() {
+            $.ajax({
+               url : 'home/get_home_weather_info', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {　　　　　　　　　　　
+　　　　　　　　 'date_delay' : "0",　　　　　　　
+　　　　　　  },
+　　　　        dataType : 'json',
+　　　　        success: function(res){
+                   data = res;
+                   updateDate(0);
+                   showTemperatureDiagram();
+                    document.getElementById('today-btn').style.background = "orange";
+                    document.getElementById('tomorrow-btn').style.background = "white";
+　　　　　　  }
+　　　　    });
+        }
+
+        function showTomorrowDiagram() {
+            $.ajax({
+               url : 'home/get_home_weather_info', 　
+　　　　        type : 'post',　　　　　　　　
+　　　　        data : {　　　　　　　　　　　
+　　　　　　　　 'date_delay' : "1",　　　　　　　
+　　　　　　  },
+　　　　        dataType : 'json',
+　　　　        success: function(res){
+                   data = res;
+                   updateDate(1);
+                showTemperatureDiagram();
+                document.getElementById('tomorrow-btn').style.background = "orange";
+                document.getElementById('today-btn').style.background = "white";
+　　　　　　  }
+　　　　    });
+
+        }
+
+        function showTemperatureDiagram() {
+            if (windLayer)
+                map.removeLayer(windLayer);
+
+            if (textLayer)
+                map.removeLayer(textLayer);
+            textLayer = showText([105, 55], curDate.getFullYear() + "年" + (curDate.getMonth()+1) + "月"  + curDate.getDate() + "日平均气温")
+
+
+            //http://tool.oschina.net/commons?type=3
+            //45-50
+            colors=[[80,0,6],[116,0,12],[184,0,0],[251,56,0],[255,110,0],
+                        [255,148,0], [255,203,36], [255,230,100], [250,242,150], [254,255,192],
+                        [183,231,251], [139,207,248], [78,185,249], [0,145,252], [0,105,223],
+                        [11,62,204], [19,32,155], [19,3,109], [86,0,148], [53,0,89]]
+            var features = pointsLayer.getSource().getFeatures();
+                //alert(features.length)
+            for (var i = 0; i < features.length; i++) {
+                    id = features[i].getProperties()["id"];
+                    if (parseFloat(data[id]["wnd"]) <= -50)
+                        color_index = 0;
+                    else if (parseFloat(data[id]["wnd"]) > 50)
+                        color_index = 19;
+                    else {
+                        color_index = 19 - Math.floor((parseFloat(data[id]["wnd"])+50)/5);
+                    }
+
+                    if (ocean_ids.indexOf(id) < 0)
+                        features[i].setStyle(getFeatureStyle(colors[color_index][0], colors[color_index][1], colors[color_index][2]));
+                    else
+                        features[i].setStyle(getFeatureStyle2(colors[color_index][0], colors[color_index][1], colors[color_index][2], 3));
+            }
+            /*if (legendLayer)
+                map.removeLayer(legendLayer);
+            legendLayer = showImage([160, 40], 'home_legend.jpg', 0.4);*/
+
+            document.getElementById("map-legend").innerHTML = '<img src="/static/img/home_legend.jpg" height="450" width="270"/></div>';
+
+            unit_str="\xB0C";
+            attr_key="wnd";
+        }
+        
+        function showHumidityDiagram() {
+             if (windLayer)
+                map.removeLayer(windLayer);
+            //var curDate = new Date();
+            if (textLayer)
+                map.removeLayer(textLayer);
+
+            textLayer = showText([105, 55], curDate.getFullYear() + "年" + (curDate.getMonth()+1) + "月"  + curDate.getDate() + "日平均湿度")
+
+
+            //http://tool.oschina.net/commons?type=3
+            //45-50
+            colors=[[123,60,29],[197,118,59],[223,158,78],[232,195,107],[245,226,157],
+                        [202,219,237], [153,184,212], [108,145,187], [68,99,163], [35,53,93]]
+            var features = pointsLayer.getSource().getFeatures();
+                //alert(features.length)
+            for (var i = 0; i < features.length; i++) {
+                id = features[i].getProperties()["id"];
+                color_index = Math.floor(parseFloat(data[id]["xdsd"])/10);
+                if (ocean_ids.indexOf(id) < 0)
+                    features[i].setStyle(getFeatureStyle(colors[color_index][0], colors[color_index][1], colors[color_index][2]));
+                else
+                    features[i].setStyle(getFeatureStyle2(colors[color_index][0], colors[color_index][1], colors[color_index][2], 3));
+            }
+            /*if (legendLayer)
+                map.removeLayer(legendLayer);
+            legendLayer = showImage([160, 40], 'humidity_legend.jpg', 0.5);*/
+            /*$(viewport).removeClass("legend");
+            $(viewport).append('<div class="legend"><img src="/static/img/home_legend.jpg" height="450" width="270"/></div>')*/
+            document.getElementById("map-legend").innerHTML = '<img src="/static/img/humidity_legend.jpg" height="300" width="270"/>';
+            unit_str="%";
+            attr_key="xdsd";
+        }
+
+        function showPrecipitationDiagram() {
+             if (windLayer)
+                map.removeLayer(windLayer);
+            //var curDate = new Date();
+            if (textLayer)
+                map.removeLayer(textLayer);
+
+            textLayer = showText([105, 55], curDate.getFullYear() + "年" + (curDate.getMonth()+1) + "月"  + curDate.getDate() + "日平均降雨量")
+
+
+            //http://tool.oschina.net/commons?type=3
+            //45-50
+            colors=[[189,244,143],[126,186,72],[129,183,247],[33,41,240],[203,64,241]]
+            var features = pointsLayer.getSource().getFeatures();
+                //alert(features.length)
+            for (var i = 0; i < features.length; i++) {
+                id = features[i].getProperties()["id"];
+                color_index = Math.floor(parseFloat(data[id]["jyl"])/20)%5;
+                if (ocean_ids.indexOf(id) < 0)
+                    features[i].setStyle(getFeatureStyle(colors[color_index][0], colors[color_index][1], colors[color_index][2]));
+                else
+                    features[i].setStyle(getFeatureStyle2(colors[color_index][0], colors[color_index][1], colors[color_index][2], 3));
+            }
+            /*if (legendLayer)
+                map.removeLayer(legendLayer);
+            legendLayer = showImage([160, 40], 'jyl_legend.jpg', 0.5);*/
+            document.getElementById("map-legend").innerHTML = '<img src="/static/img/jyl_legend.jpg" height="150" width="250"/></div>';
+
+            unit_str="mm";
+            attr_key="jyl";
+        }
+        
+        function showVisibilityDiagram() {
+             if (windLayer)
+                map.removeLayer(windLayer);
+            //var curDate = new Date();
+            if (textLayer)
+                map.removeLayer(textLayer);
+
+            textLayer = showText([105, 55], curDate.getFullYear() + "年" + (curDate.getMonth()+1) + "月"  + curDate.getDate() + "日能见度")
+
+
+            //http://tool.oschina.net/commons?type=3
+            //45-50
+            colors=[[95,43,29],[133,51,237],[199,53,40],[207,94,50],[227,174,104],
+                        [253,252,100], [186,245,103], [181,221,247], [214,234,245], [255,255,255]]
+            var features = pointsLayer.getSource().getFeatures();
+                //alert(features.length)
+            for (var i = 0; i < features.length; i++) {
+                id = features[i].getProperties()["id"];
+                var njd_value = parseFloat(data[id]["njd"])/1000;
+                var color_index;
+                if (njd_value >= 0 && njd_value < 0.2)
+                    color_index = 0;
+                else if (njd_value >= 0.2 && njd_value < 0.5)
+                    color_index = 1;
+                else if (njd_value >= 0.5 && njd_value < 1)
+                    color_index = 2;
+                else if (njd_value >= 1 && njd_value < 2)
+                    color_index = 3;
+                else if (njd_value >= 2 && njd_value < 3)
+                    color_index = 4;
+                else if (njd_value >= 3 && njd_value < 5)
+                    color_index = 5;
+                else if (njd_value >= 5 && njd_value < 10)
+                    color_index = 6;
+                else if (njd_value >= 10 && njd_value < 20)
+                    color_index = 7;
+                else if (njd_value >= 20 && njd_value < 30)
+                    color_index = 8;
+                else
+                    color_index = 1;
+                if (ocean_ids.indexOf(id) < 0)
+                    features[i].setStyle(getFeatureStyle(colors[color_index][0], colors[color_index][1], colors[color_index][2]));
+                else
+                    features[i].setStyle(getFeatureStyle2(colors[color_index][0], colors[color_index][1], colors[color_index][2], 3));
+            }
+            /*if (legendLayer)
+                map.removeLayer(legendLayer);
+            legendLayer = showImage([160, 40], 'njd_legend.jpg', 0.5);*/
+            document.getElementById("map-legend").innerHTML = '<img src="/static/img/njd_legend.jpg" height="300" width="270"/></div>';
+
+            unit_str="m";
+            attr_key="njd";
+        }
+        
+        
+        function showWindDirectionDiagram() {
+             if (windLayer)
+                map.removeLayer(windLayer);
+            //var curDate = new Date();
+            if (textLayer)
+                map.removeLayer(textLayer);
+
+            textLayer = showText([105, 55], curDate.getFullYear() + "年" + (curDate.getMonth()+1) + "月"  + curDate.getDate() + "日风向")
+
+
+            //http://tool.oschina.net/commons?type=3
+            //45-50
+            var features = pointsLayer.getSource().getFeatures();
+                //alert(features.length)
+            for (var i = 0; i < features.length; i++) {
+                features[i].setStyle(new ol.style.Style({
+                                       //text: new Text()
+                                    }));
+            }
+            /*if (legendLayer)
+                map.removeLayer(legendLayer);*/
+
+            infos = JSON.parse(JSON.stringify({{wind_directions_info|safe}}));
+            windLayer = showAllWindDirection(infos);
+            attr_key="none";
+            document.getElementById("map-legend").innerHTML = '';
+        }
+
+        function getIconStyle(direction) {
+            var iconStyle = new ol.style.Style({
+            image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+              anchor: [0.5, 46],
+              anchorXUnits: 'fraction',
+              anchorYUnits: 'pixels',
+              //src: 'https://openlayers.org/en/v4.5.0/examples/data/icon.png'
+                src: '/static/img/home_img/' + direction + '.png',
+                scale: 0.2
+            }))
+          });
+            return iconStyle
+        }
+
+        function getDirectFlagFromAngle(angle_str) {
+             var angle_float = parseFloat(angle_str);
+             var direct_list = ['N','NEN','EN','EEN',
+                                'E','EES','ES','SES',
+                                'S','SWS','WS','WWS',
+                                'W','WWN','WN','NWN'];
+             var i;
+             for (i = 0; i < 12; i++) {
+                if (angle_float > (348.75 + i*22.5)%360 && angle_float <= (11.25 + i*22.5))
+                    break;
+             }
+             return direct_list[i];
+        }
+        function showAllWindDirection(infos) {
+            var features=[]
+            index = 0;
+
+            for (var i  in infos) {
+                var coordinate = [parseFloat(infos[i][0]), parseFloat(infos[i][1])];
+                features[index] = new ol.Feature({
+                    geometry: new ol.geom.Point(ol.proj.transform(coordinate ,'EPSG:4326','EPSG:3857'),"XY"),
+                    name: i});
+                features[index].setStyle(getIconStyle(getDirectFlagFromAngle(infos[i][2])));
+                index+=1;
+            }
+            var trisource = new ol.source.Vector({
+            features: features
+          });
+            var trivectorLayer = new ol.layer.Vector({
+            source: trisource,
+          });
+            map.addLayer(trivectorLayer);
+            return trivectorLayer;
+        }
+        function getFeatureStyle(r,g,b) {
+            return new ol.style.Style({
+                fill: new ol.style.Fill({
+                    color: 'rgba(' + r.toString() + ',' + g.toString() + ',' + b.toString() + ',0.4)'
+                }),
+                stroke: new ol.style.Stroke({
+                    color: '#319FD3',
+                    width: 1
+                })
+            });
+        }
+
+        function getFeatureStyle2(r,g,b, width) {
+            return new ol.style.Style({
+                fill: new ol.style.Fill({
+                    color: 'rgba(' + r.toString() + ',' + g.toString() + ',' + b.toString() + ',0.4)'
+                }),
+                stroke: new ol.style.Stroke({
+                    color: 'red',
+                    width: width
+                })
+            });
+        }
+
+
+        /*var viewport = map.getViewport();
+        $(viewport).append('<div id="sea-map-label" class="sea-map-label">海图</div>' +
+                '<div id="star-map-label" class="star-map-label">卫星图</div>' +
+                '<div id="map-label" class="map-label">地图</div>'
+        );
+        //showImage([120.00, 33.00]);
+        document.getElementById('sea-map-label').onclick = function() {
+          //map.removeLayer(mapLayer);
+          //map.addLayer(openSeaMapLayer);
+          var newmapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               //url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                 url: 'http://124.193.165.122:8083/{z}/{x}/{y}.png'
+               //url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+           })
+         });
+          var layers = map.getLayerGroup().getLayers();
+          layers.clear();
+          map.addLayer(newmapLayer);
+          addAllLayer()
+
+      }
+        document.getElementById('star-map-label').onclick = function() {
+          var newmapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               //url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                 //url: 'http://124.193.165.122:8083/{z}/{x}/{y}.png'
+               url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+           })
+         });
+          var layers = map.getLayerGroup().getLayers();
+        layers.clear();
+          map.addLayer(newmapLayer);
+          addAllLayer();
+
+      }
+        document.getElementById('map-label').onclick = function() {
+          var newmapLayer = new ol.layer.Tile({
+           source: new ol.source.XYZ({
+               url:'http://www.google.cn/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i380072576!3m8!2szh-CN!3scn!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0'
+                 //url: 'http://124.193.165.122:8083/{z}/{x}/{y}.png'
+               //url: 'http://mt2.google.cn/vt/lyrs=y&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=G'
+           })
+         });
+          var layers = map.getLayerGroup().getLayers();
+          layers.clear();
+          map.addLayer(newmapLayer);
+          addAllLayer();
+
+      }*/
+        /*function showImage(location) {
+         var iconFeature = new ol.Feature({
+            geometry: new ol.geom.Point(location, "XY"),
+            name: 'Null Island',
+            population: 4000,
+            rainfall: 500
+          });
+
+          var iconStyle = new ol.style.Style({
+            image: new ol.style.Icon(/** @type {olx.style.IconOptions} *//*({
+              anchor: [0.5, 46],
+              anchorXUnits: 'fraction',
+              anchorYUnits: 'pixels',
+              //src: 'https://openlayers.org/en/v4.5.0/examples/data/icon.png'
+                src: '/static/img/map.png',
+                scale: 0.15
+            }))
+          });
+
+          iconFeature.setStyle(iconStyle);
+
+          var vectorSource = new ol.source.Vector({
+            features: [iconFeature]
+          });
+
+          var vectorLayer = new ol.layer.Vector({
+            source: vectorSource
+          });
+          map.addLayer(vectorLayer);
+          return vectorLayer;
+     }*/
+
+        function showColor(coordinates, gradient_v) {
+            show_features = []
+            for (var i = 0; i < coordinates.length; i++) {
+                    show_features.push({
+                        type: "Point", "coordinates": ol.proj.transform([parseFloat(coordinates[i][0]),
+                            parseFloat(coordinates[i][1])], 'EPSG:4326','EPSG:3857'), count: 40
+                    })
+            }
+            var heatData = [
+                {
+                    type: "FeatureCollection",
+                    features: show_features
+                }];
+            var vectorSource = new ol.source.Vector({
+                features: (new ol.format.GeoJSON()).readFeatures(heatData[0], {
+                    dataProjection: 'EPSG:3857',
+                    featureProjection: 'EPSG:3857'
+                }),
+                projection: 'EPSG:3857'
+            });
+            var vector = new ol.layer.Heatmap({
+                  source: vectorSource,
+                  opacity: [0.5],//透明度
+                  blur: 30,//模糊大小（以像素为单位）,默认15
+                  radius: 30,//半径大小（以像素为单位,默认8
+                  shadow: 500,//阴影像素大小，默认250
+                  //矢量图层的渲染模式：
+                  //'image'：矢量图层呈现为图像。性能出色，但点符号和文本始终随视图一起旋转，像素在缩放动画期间缩放。
+                  //'vector'：矢量图层呈现为矢量。即使在动画期间也能获得最准确的渲染，但性能会降低。
+                  renderMode: 'vector',
+                    gradient: gradient_v
+
+                });
+            map.addLayer(vector);
+            return vector;
+        }
+
+        function showText(coordinate, text) {
+            var iconFeature = new ol.Feature({
+                    //点要素 [116.28, 39.54]
+                    geometry: new ol.geom.Point(ol.proj.transform(coordinate ,'EPSG:4326','EPSG:3857'), "XY"),
+                    //名称属性
+                    name: text
+            });
+            var createLabelStyle = function (feature) {
+                //返回一个样式
+                return new ol.style.Style({
+                     //文本样式
+                            text: new ol.style.Text({
+                                offsetX:0,
+                                //对齐方式
+                                textAlign: 'center',
+                                //文本基线
+                                textBaseline: 'middle',
+                                //字体样式
+                                font: 'normal 30px 微软雅黑',
+                                //文本内容
+                                text: feature.get('name'),
+                                //填充样式
+                                /*fill: new ol.style.Fill({
+                                    color: "black" //'#aa3300'
+                                }),*/
+                                //笔触
+                                stroke: new ol.style.Stroke({
+                                    color: "black", //'#ffcc33',
+                                    width: 1
+                                })
+                            }),
+                    zIndex:60
+                        });
+            };
+
+            iconFeature.setStyle(createLabelStyle(iconFeature));
+            var vectorSource = new ol.source.Vector({
+                    //指定要素
+                    features:[iconFeature]
+            });
+            //初始化矢量图层
+            var vectorLayer = new ol.layer.Vector({
+                    //数据源
+                    source:vectorSource
+            });
+            //将矢量图层添加到map中
+            map.addLayer(vectorLayer);
+            return vectorLayer;
+        }
+
+        /*
+        var heatData = [
+            {type: "FeatureCollection",
+            features:  [
+                {type: "Point","coordinates": [117.363228, 32.939667], count: 80},
+                {type: "Point","coordinates": [117.359623, 32.941612], count: 60},
+                {type: "Point","coordinates": [117.365631, 32.94651], count: 90},
+                {type: "Point","coordinates": [117.36443, 32.928789], count: 80},
+                {type: "Point","coordinates": [117.351212, 32.95328], count: 60},
+                {type: "Point","coordinates": [117.363228, 32.936281], count: 90},
+                {type: "Point","coordinates": [117.385029, 32.948383], count: 60},
+                {type: "Point","coordinates": [117.370781, 32.920144], count: 80},
+                {type: "Point","coordinates": [117.393097, 32.936137], count: 80},
+                {type: "Point","coordinates": [117.373528, 32.919856], count: 80},
+                {type: "Point","coordinates": [117.353443, 32.916541], count: 80},
+                {type: "Point","coordinates": [117.397217, 32.913803], count: 80},
+                {type: "Point","coordinates": [117.35207, 32.904148], count: 80}
+            ]}];
+
+        var vectorSource = new ol.source.Vector({
+        features: (new ol.format.GeoJSON()).readFeatures(heatData[0],{
+                 dataProjection : 'EPSG:4326',
+                 featureProjection : 'EPSG:4326'
+        })
+    });
+    // Heatmap热力图
+    map.addLayer(vector);*/
+        /*
+        var show_colors = JSON.parse(JSON.stringify({{show_colors|safe}}));
+        var colors=[[80,0,6],[116,0,12],[184,0,0],[251,56,0],[255,110,0],
+        [255,148,0], [255,203,36], [255,230,100], [250,242,150], [254,255,192],
+        [183,231,251], [139,207,248], [78,185,249], [0,145,252], [0,105,223],
+        [11,62,204], [19,32,155], [19,3,109], [86,0,148], [53,0,89]]
+
+        var p_colors=['#500006', '#74000c', '#b80000', '#fb3800', '#ff6e00',
+          '#ff9400', '#ffcb24', '#ffe664', '#faf296', '#feffc0',
+          '#b7e7fb', '#8bcff8', '#4eb9f9', '#0091fc', '#0069df',
+          '#0b3ecc', '#13209b', '#13036d', '#560094', '#350059']
+        gradient_v = []
+        history_layers =[]
+        for (var item in show_colors){
+                gradient_v = []
+                coordinates_v=show_colors[item];
+                gradient_v.push(item);
+                for (var k = 0; k < p_colors.length-1; k++) {
+                    if (p_colors[k] == item) {
+                        gradient_v.push(p_colors[k+1]);
+                    }
+                }
+                if (gradient_v.length == 1)
+                    gradient_v.push(item)
+
+                history_layers.push(showColor(coordinates_v, gradient_v));
+
+            }*/
+        function addAllLayer(){
+          for (var i = 0; i < history_layers.length; i++) {
+                  map.addLayer(history_layers[i]);
+          }
+        }
+        function getMinZoom() {
+          var viewport = document.getElementById('map');
+          var width = viewport.clientWidth;
+          return Math.ceil(Math.LOG2E * Math.log(width / 256));
+        }
+        window.addEventListener('resize', function() {
+            var minZoom = getMinZoom();
+            if (minZoom !== mapView.getMinZoom()) {
+              mapView.setMinZoom(minZoom);
+            }
+        })
+
+        /*function disableMove() {
+            map.getInteractions().forEach(function (element, index, array) {
+                if (element instanceof ol.interaction.DragPan)
+                    pan = element;
+                pan.setActive(false)
+            });
+        }*/
+
+        function showImage(location, imgfile,scale) {
+         var iconFeature = new ol.Feature({
+            geometry: new ol.geom.Point(ol.proj.transform(location,'EPSG:4326','EPSG:3857'), "XY"),
+            name: 'Null Island',
+            population: 4000,
+            rainfall: 500
+          });
+
+          var iconStyle = new ol.style.Style({
+            image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+              anchor: [0.5, 40],
+              anchorXUnits: 'fraction',
+              anchorYUnits: 'pixels',
+              //src: 'https://openlayers.org/en/v4.5.0/examples/data/icon.png'
+                src: '/static/img/' + imgfile,
+                scale: scale
+            }))
+          });
+
+          iconFeature.setStyle(iconStyle);
+
+          var vectorSource = new ol.source.Vector({
+            features: [iconFeature]
+          });
+
+          var vectorLayer = new ol.layer.Vector({
+            source: vectorSource
+          });
+          map.addLayer(vectorLayer);
+          return vectorLayer;
+     }
+
+     // --------------- all tags info panel start---------------------------
+
+     var overlay_tag = new ol.Overlay({
+         element: document.getElementById('popup-tag'),
+         positioning: 'bottom-center',
+         stopEvent: false,
+         dragging: false,
+         offset: [0,0]
+     });
+     map.addOverlay(overlay_tag);
+
+     function showTagPanel() {
+         var some_content = ""
+         $.ajax({
+            url: 'home/get_all_tags',
+            type: 'post',
+            data: {
+                'yhm': "admin",
+
+            },
+            dataType: 'json',
+            success: function (datas) {
+                if (Object.keys(datas).length <= 0 ) {
+                    some_content = '<img src="/static/img/tag/00.png"/><p style="color: darkgray">暂未添加标注</p>';
+                } else {
+                    some_content = "<table border='0'>";
+                    if (allTagInfoVectorsLayer)
+                        map.removeLayer(allTagInfoVectorsLayer);
+                    allTagInfoVectorsLayer = null;
+                    for (var name  in datas) {
+                        show_tag_img_v1(name, datas[name][2], parseFloat(datas[name][0]), parseFloat(datas[name][1]))
+                        some_content += '<tr onclick="showTag(this.id)" id="' + name +
+                            '"><td><img style="float: left" src="' + datas[name][2] + '"/></td><td>' + name + '</td></tr>';
+                    }
+                    some_content += "</table>";
+                }
+               var panel_element = document.getElementById('popup-tag-panel');
+               $(panel_element).popover('destroy');
+                overlay_tag.setPosition(ol.proj.transform( [122,37] ,'EPSG:4326','EPSG:3857'));
+                $(panel_element).popover({
+                  placement: 'top',
+                  animation: false,
+                  html: true,
+                  content: '<p onclick=\'add_tag()\'>--- +添加标注+ ---</p><br>' + some_content,
+                  template: "<div class=\"popover\" role=\"tooltip\" style='min-width: 300px'><h3 class=\"panel-popover-title\">我的标注" +
+                      "<a style=\"float:right; font-size:1em; color: white\" onclick=\"closeTagPanel()\">x</a></h3>" +
+                      "<div class=\"popover-content\" style=\"text-align: center\"></div></div>"
+                });
+                $(panel_element).popover('show');
+            }
+        })
+
+     }
+     function closeTagPanel() {
+         var panel_element = document.getElementById('popup-tag-panel');
+          $(panel_element).popover('destroy');
+     }
+
+
+     var dragPan;
+      map.getInteractions().forEach(function(interaction){
+        if (interaction instanceof ol.interaction.DragPan) {
+          dragPan = interaction;
+        }
+      });
+
+      var element = document.getElementById('popup-tag');
+
+      element.addEventListener('mousedown', function(evt) {
+        dragPan.setActive(false);
+        overlay_tag.set('dragging', true);
+      });
+      // var translateLine = new ol.interaction.Translate({
+      //   //features:new ol.Collection([lineFeature])
+      //   layers:new ol.Collection([popup])
+      // });
+      // map.addInteraction(translateLine);
+
+      // var coord;
+
+      // translateLine.on('translatestart',function (evt){
+      //   coord = popup.getCoordinates();
+      // });
+      // translateLine.on('translating', function (evt) {
+      //   line.setCoordinates([coord, evt.coordinate]);
+      // });
+      map.on('pointermove', function(evt) {
+        if (overlay_tag.get('dragging')) {
+          var dd2=map.getPixelFromCoordinate(evt.coordinate);
+          var newX=dd2[0];//减去偏移量
+          var newY=dd2[1];
+          var newPoint=map.getCoordinateFromPixel([newX,newY]);
+          overlay_tag.setPosition(newPoint);
+      //   }
+
+        }
+      });
+      map.on('pointerup', function(evt) {
+        if (overlay_tag.get('dragging') === true) {
+          dragPan.setActive(true);
+          overlay_tag.set('dragging', false);
+        }
+      });
+
+     // --------------- all tags info panel end---------------------------
+
+
+     // --------------- one tag info panel start---------------------------
+     var popup_tag_info_panel = new ol.Overlay({
+        element: document.getElementById('popup-tag-info-panel')
+      });
+      map.addOverlay(popup_tag_info_panel);
+
+
+
+      var tagInfoVectorsLayer;
+
+     function show_tag_img(img_src, lon, lat) {
+         if (tagInfoVectorsLayer)
+             return;
+
+         var onetag = new ol.Feature({
+             geometry: new ol.geom.Point(ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857'), "XY"),
+             name: img_src,
+         });
+         var tagsInfoSource = new ol.source.Vector({});//start, end
+         tagsInfoSource.addFeature(onetag);
+
+         var tag_info_icon_style = new ol.style.Style({
+             image: new ol.style.Icon({
+                 //scale:0.2,
+                 src: img_src
+             })
+         });
+
+         tagInfoVectorsLayer = new ol.layer.Vector({
+             source: tagsInfoSource,
+             style: tag_info_icon_style
+         })
+         map.addLayer(tagInfoVectorsLayer);
+     }
+
+     var allTagInfoVectorsLayer;
+
+     function show_tag_img_v1(tag_name, img_src, lon, lat) {
+
+         var tag_info_icon_style = new ol.style.Style({
+             image: new ol.style.Icon({
+                 //scale:0.2,
+                 src: img_src
+             })
+         });
+
+         var onetag = new ol.Feature({
+             geometry: new ol.geom.Point(ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857'), "XY"),
+             name: tag_name,
+             id:"existed_tag"
+         });
+         onetag.setStyle(tag_info_icon_style);   // amazing, style put in new Feature is wrong
+         var tagsInfoSource;
+         if (allTagInfoVectorsLayer)
+             tagsInfoSource = allTagInfoVectorsLayer.getSource();
+         else {
+             tagsInfoSource = new ol.source.Vector({});
+             allTagInfoVectorsLayer = new ol.layer.Vector({
+                source: tagsInfoSource
+             })
+             map.addLayer(allTagInfoVectorsLayer);
+         }
+         tagsInfoSource.addFeature(onetag);
+     }
+
+     function showTag(tag_name) {
+         $.ajax({
+            url: 'home/get_one_tag',
+            type: 'post',
+            data: {
+                'name': tag_name,
+
+            },
+            dataType: 'json',
+            success: function (datas) {
+                if (datas.length <= 0 ) {
+                     alert("数据库获取不到该标签名称的信息");
+                     return;
+                }
+                var element = popup_tag_info_panel.getElement();
+            $(element).popover('destroy');
+            popup_tag_info_panel.setPosition(ol.proj.transform([parseFloat(datas.lon), parseFloat(datas.lat)], "EPSG:4326","EPSG:3857"));
+            $(element).popover({
+              placement: 'top',
+              animation: false,
+              html: true,
+              content: "<p>"+ datas.comment + "</p>",
+              template: "<div class=\"popover\" role=\"tooltip\" style='min-width: 300px'><div class=\"arrow\"></div><h3 class=\"panel-info-title\">" + datas.name +
+                      "<div style=\"float: right\"><img style=\"height: 20px; width: 20px\" src=\"/static/img/tag/edit.png\" onclick=\"editOneTag(this.name)\" name=\""  + datas.name + "\"/>" +
+                      "<img style=\"height: 20px; width: 20px\" src=\"/static/img/tag/delete.png\" onclick=\"deleteOneTag(this.name)\" name=\""  + datas.name + "\"/>" +
+                      "<a style=\"font-size:1.2em; margin-left: 5px; color: gainsboro\" onclick=\"closeTagInfoPanel()\">x</a></div></h3>" +
+                      "<div class=\"popover-content\" style=\"text-align: left\"></div></div>"
+            });
+            $(element).popover('show');
+            }
+        })
+     }
+
+     var popup_edit_tag_panel = new ol.Overlay({
+        element: document.getElementById('popup-edit-tag-panel')
+      });
+      map.addOverlay(popup_edit_tag_panel);
+
+      function deleteOneTag(name) {
+            $.ajax({
+                url: 'home/delete_tag',
+                type: 'post',
+                data: {
+                    'name': name
+                },
+                dataType: 'json',
+                success: function (data) {
+                    alert(data["info"])
+                    closeTagInfoPanel();
+                    showTagPanel();
+                }
+            })
+     }
+
+     function closeTagInfoPanel() {
+        var element = popup_tag_info_panel.getElement();
+        $(element).popover('destroy');
+        map.removeLayer(tagInfoVectorsLayer);
+        tagInfoVectorsLayer = null;
+     }
+
+
+      var modify_tag_lon;
+      var modify_tag_lat;
+     function editOneTag(name) {
+         closeTagInfoPanel();
+         $.ajax({
+            url: 'home/get_one_tag',
+            type: 'post',
+            data: {
+                'name': name,
+
+            },
+            dataType: 'json',
+            success: function (datas) {
+                if (datas.length <= 0 ) {
+                     alert("数据库获取不到该标签名称的信息");
+                     return;
+                }
+                //show_tag_img(datas["img_src"], parseFloat(datas.lon), parseFloat(datas.lat))
+                modify_tag_lon = datas.lon;
+                modify_tag_lat = datas.lat;
+                var element = popup_edit_tag_panel.getElement();
+            $(element).popover('destroy');
+            popup_edit_tag_panel.setPosition(ol.proj.transform([parseFloat(datas.lon), parseFloat(datas.lat)], "EPSG:4326","EPSG:3857"));
+            $(element).popover({
+              placement: 'top',
+              animation: false,
+              html: true,
+              content: "<strong style=\"padding-right: 5px\">名称</strong>" +
+                  "<input type=\"text\" id=\"modify-tag-name\" style=\"height:20px;width:180px;\" maxlength=\"50\"  value=\"" + datas.name +"\" placeholder=\"我的标记\"/>" +
+                  "<img id=\"modify-tag-img\" src=\"" + datas["img_src"] +"\" height=\"30\" width=\"30\"/><br></div>" +
+                  "<div style=\"padding-top:5px\">" +
+                  "<strong style=\"padding-right: 5px\">备注</strong>" +
+                  "<textarea id=\"modify-tag-comment\" style=\"width:180px;height:100px;vertical-align:top;\" placeholder=\"我的备注\">" + datas.comment + "</textarea>" +
+                  "<a onclick='modifyImage(this.id, \"" +name + "\")' id=\"" + datas.img_src + "\" style=\"padding-left: 5px\">更换</a><br></div>" +
+                  "<div align=\"right\" style=\"padding-top: 10px;\"><input type=\"submit\"  style=\"margin-right: 5px\" value=\"确定\" onclick=\"modifyOneTag(this.name)\" name=\"" + name + "\">" +
+                  "<input type=\"submit\" value=\"取消\" onclick=\"closeEditTagPanel()\"></div>",
+              template: "<div class=\"popover\" role=\"tooltip\" style='min-width: 300px'><h3 class=\"panel-add-title\">修改标记" +
+                      "<a style=\"float:right; font-size:1em;\" onclick=\"closeEditTagPanel()\">x</a></h3>" +
+                      "<div class=\"popover-content\" style=\"text-align: center\"></div></div>"
+            });
+            $(element).popover('show');
+            }
+        })
+     }
+
+
+
+     function closeEditTagPanel() {
+        var element = popup_edit_tag_panel.getElement();
+        $(element).popover('destroy');
+        map.removeLayer(tagInfoVectorsLayer);
+        tagInfoVectorsLayer = null;
+     }
+
+     var modify_name;
+     var modify_comment;
+
+     function modifyImage(current_icon_src, ori_name) {
+        var  node = document.getElementById("popup-edit-tag-panel")
+        if (node && node.hasAttribute("title"))
+            node.setAttribute("title", "更换标记样式");
+        modify_name = document.getElementById("modify-tag-name").value;
+        modify_comment = document.getElementById('modify-tag-comment').value;
+
+
+        var element = popup_edit_tag_panel.getElement();
+            $(element).popover('destroy');
+            popup_edit_tag_panel.setPosition(ol.proj.transform([parseFloat(modify_tag_lon), parseFloat(modify_tag_lat)], "EPSG:4326","EPSG:3857"));
+            $(element).popover({
+              placement: 'top',
+              animation: false,
+              html: true,
+              content: "<img style=\"margin-left: 10px\" src=\"/static/img/tag/10.png\" onclick='returnModifyTagWithNewIcon(10, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/11.png\" onclick='returnModifyTagWithNewIcon(11, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/12.png\" onclick='returnModifyTagWithNewIcon(12, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/13.png\" onclick='returnModifyTagWithNewIcon(13, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/14.png\" onclick='returnModifyTagWithNewIcon(14, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/15.png\" onclick='returnModifyTagWithNewIcon(15, \"" + ori_name +"\")'/><br>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/20.png\" onclick='returnModifyTagWithNewIcon(20, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/21.png\" onclick='returnModifyTagWithNewIcon(21, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/22.png\" onclick='returnModifyTagWithNewIcon(22, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/23.png\" onclick='returnModifyTagWithNewIcon(23, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/24.png\" onclick='returnModifyTagWithNewIcon(24, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/25.png\" onclick='returnModifyTagWithNewIcon(25, \"" + ori_name +"\")'/><br>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/30.png\" onclick='returnModifyTagWithNewIcon(30, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/31.png\" onclick='returnModifyTagWithNewIcon(31, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/32.png\" onclick='returnModifyTagWithNewIcon(32, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/33.png\" onclick='returnModifyTagWithNewIcon(33, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/34.png\" onclick='returnModifyTagWithNewIcon(34, \"" + ori_name +"\")'/>" +
+                  "<img style=\"margin-left: 10px\" src=\"/static/img/tag/35.png\" onclick='returnModifyTagWithNewIcon(35, \"" + ori_name +"\")'/><br>" +
+                  "<input style=\"margin-left: 10px\" type=\"submit\" value=\"返回\" onclick='returnModifyAddTag(\"" + current_icon_src + "\",\"" +  ori_name + "\")'/>",
+              template: "<div class=\"popover\" role=\"tooltip\" style=\"min-width:300px\"><div class=\"arrow\"></div><h3 class=\"popover-title\"></h3><div class=\"popover-content\"></div></div>"
+
+            });
+            $(element).popover('show');
+    }
+
+    function returnModifyTagWithNewIcon(num, ori_name) {
+        var icon_src = "/static/img/tag/" + num +".png"
+        returnModifyAddTag(icon_src, ori_name);
+    }
+
+    function returnModifyAddTag(current_icon_src, ori_name) {
+
+         var element = popup_edit_tag_panel.getElement();
+            $(element).popover('destroy');
+            popup_edit_tag_panel.setPosition(ol.proj.transform([parseFloat(modify_tag_lon), parseFloat(modify_tag_lat)], "EPSG:4326","EPSG:3857"));
+            $(element).popover({
+              placement: 'top',
+              animation: false,
+              html: true,
+              content: "<strong style=\"padding-right: 5px\">名称</strong>" +
+                  "<input type=\"text\" id=\"modify-tag-name\" style=\"height:20px;width:180px;\" maxlength=\"50\"  value=\"" + modify_name +"\" placeholder=\"我的标记\"/>" +
+                  "<img id=\"modify-tag-img\" src=\"" + current_icon_src +"\" height=\"30\" width=\"30\"/><br></div>" +
+                  "<div style=\"padding-top:5px\">" +
+                  "<strong style=\"padding-right: 5px\">备注</strong>" +
+                  "<textarea id=\"modify-tag-comment\" style=\"width:180px;height:100px;vertical-align:top;\" placeholder=\"我的备注\">" + modify_comment + "</textarea>" +
+                  "<a onclick=\"modifyImage(this.id, '" +ori_name + "')\" id=\"" + current_icon_src + "\" style=\"padding-left: 5px\">更换</a><br></div>" +
+                  "<div align=\"right\" style=\"padding-top: 10px;\"><input type=\"submit\"  style=\"margin-right: 5px\" value=\"确定\" onclick=\"modifyOneTag(this.name)\" name=\"" + ori_name + "\">" +
+                  "<input type=\"submit\" value=\"取消\" onclick=\"closeEditTagPanel()\"></div>",
+              template: "<div class=\"popover\" role=\"tooltip\" style='min-width: 300px'><h3 class=\"panel-add-title\">修改标记" +
+                      "<a style=\"float:right; font-size:1em;\" onclick=\"closeEditTagPanel()\">x</a></h3>" +
+                      "<div class=\"popover-content\" style=\"text-align: center\"></div></div>"
+            });
+            $(element).popover('show');
+    }
+
+     function modifyOneTag(ori_name) {
+         if (document.getElementById('modify-tag-name').value =="") {
+            alert("请填写名称");
+            return;
+        }
+        $.ajax({
+            url: 'home/update_tag',
+            type: 'post',
+            data: {
+                'ori_name': ori_name,
+                'name': document.getElementById('modify-tag-name').value,
+                'comment': document.getElementById('modify-tag-comment').value,
+                'img_src': document.getElementById('modify-tag-img').getAttribute("src"),
+                'lon' : modify_tag_lon,
+                'lat': modify_tag_lat
+            },
+            dataType: 'json',
+            success: function (data) {
+                alert(data["info"])
+                closeEditTagPanel();
+                showTagPanel();
+            }
+        })
+     }
+
+     // --------------- one tag info panel end---------------------------
+
+
+
+     var tag_icon_style = new ol.style.Style({
+          image: new ol.style.Icon({
+              //scale:0.2,
+              src:'static/img/tag/33.png'
+          })
+        });
+     var tagVectorPointsLayer;
+
+     function add_tag() {
+         var tagsSource = new ol.source.Vector({});//start, end
+         if(tagVectorPointsLayer)
+             return;
+
+          var onetag = new ol.Feature({
+              geometry: new ol.geom.Point(ol.proj.transform([120,30] ,'EPSG:4326','EPSG:3857'), "XY"),
+              name: 'one_tag_name',
+          });
+
+          var translate1 = new ol.interaction.Translate({
+              features: new ol.Collection([onetag])
+          });
+          map.addInteraction(translate1);
+          tagsSource.addFeature(onetag);
+
+          tagVectorPointsLayer = new ol.layer.Vector({
+          source: tagsSource,
+          style: tag_icon_style
+        })
+
+
+
+         /*var coordMarker1, coordMarker2;
+        translate1.on('translatestart', function (evt) {
+          coordMarker2 = marker2.getCoordinates();
+        });
+        translate1.on('translating', function (evt) {
+          line.setCoordinates([coordMarker2, evt.coordinate]);
+        });*/
+
+        map.addLayer(tagVectorPointsLayer);
+     }
+
+      // --------------- tag prompt start---------------------------
+
+    var container_prompt = document.getElementById('popup-prompt');
+      var content_prompt = document.getElementById('popup-prompt-content');
+      //var closer_prompt = document.getElementById('popup-prompt-closer');
+
+
+      var overlay_prompt = new ol.Overlay({
+         //设置弹出框的容器
+        element: container_prompt,
+        //是否自动平移，即假如标记在屏幕边缘，弹出时自动平移地图使弹出框完全可见
+        autoPan: true
+      });
+
+      /*closer_prompt.onclick = function() {
+            overlay_prompt.setPosition(undefined);
+            closer_prompt.blur();
+            return false;
+          };*/
+      map.addOverlay(overlay_prompt);
+
+
+     var tag_panel = false;
+
+     map.on('pointermove', showInfo);
+      function showInfo(event) {
+        var features = map.getFeaturesAtPixel(event.pixel);
+        if (features && features[0].getProperties()["name"] == "one_tag_name" && tag_panel==false) {
+
+                content_prompt.innerHTML="<code>点击左键标记位置，Esc退出</code>"
+                overlay_prompt.setPosition(event.coordinate);
+            }
+      }
+
+      $('body',document).on('keyup', function (e) {
+        if (e.which === 27) {
+           // console.log("按下esc");
+           overlay_prompt.setPosition(undefined);
+        }
+    });
+
+       // --------------- tag prompt end---------------------------
+
+
+ // --------------- one tag add panel start---------------------------
+      var popup_add_tag_panel = new ol.Overlay({
+        element: document.getElementById('popup-add-tag-panel')
+      });
+      map.addOverlay(popup_add_tag_panel);
+
+      var tag_coordinate;
+      var tag_lon;
+      var tag_lat;
+
+      map.on('singleclick', function(event){
+        var features = map.getFeaturesAtPixel(event.pixel);
+        if (features && features[0].getProperties()["name"] == "one_tag_name") {
+            tag_panel = true;
+            overlay_prompt.setPosition(undefined);
+            var element = popup_add_tag_panel.getElement();
+            tag_coordinate = event.coordinate;
+            var coordinate_t= ol.proj.transform(tag_coordinate, "EPSG:3857", "EPSG:4326");
+            tag_lon = String(parseFloat(coordinate_t[0], 12));
+            tag_lat = String(parseFloat(coordinate_t[1], 12));
+            $(element).popover('destroy');
+            popup_add_tag_panel.setPosition(tag_coordinate);
+            $(element).popover({
+              placement: 'top',
+              animation: false,
+              html: true,
+              content: '<strong style="padding-right: 5px">名称</strong><input type="text" id="tag-name" style="height:20px;width:180px;" maxlength="50" placeholder="我的标记"/>' +
+                  '<img id="tag-img" src="/static/img/tag/33.png" height="30" width="30"/><br></div>' +
+                  '<div style="padding-top:5px"><strong style="padding-right: 5px">备注</strong><textarea id="tag-comment" style="width:180px;height:100px;vertical-align:top;" placeholder="我的备注"></textarea>' +
+                  '<a onclick="changeImage(' + "'/static/img/tag/33.png'" + ')" style="padding-left: 5px">更换</a><br></div>' +
+                  '<div align="right" style="padding-top: 10px; margin-right:10px"><input type="submit" value="保存" onclick="saveTag()">' +
+                  '<input type="submit" value="删除" onclick="deleteTag()"></div>',
+              template: "<div class=\"popover\" role=\"tooltip\" style='min-width: 300px'><div class=\"arrow\"></div><h3 class=\"panel-add-title\">添加标记" +
+                      "<a style=\"float:right; font-size:1em;\" onclick=\"closeAddTagPanel()\">x</a></h3>" +
+                      "<div class=\"popover-content\"></div></div>"
+            });
+            $(element).popover('show');
+        }
+    });
+
+    function closeAddTagPanel() {
+        tag_panel = false;
+        var element = popup_add_tag_panel.getElement();
+        $(element).popover('destroy');
+    }
+
+    function saveTag() {
+        if (document.getElementById('tag-name').value =="") {
+            alert("请填写名称");
+            return;
+        }
+        $.ajax({
+            url: 'home/add_tag',
+            type: 'post',
+            data: {
+                'name': document.getElementById('tag-name').value,
+                'comment': document.getElementById('tag-comment').value,
+                'img_src': document.getElementById('tag-img').getAttribute("src"),
+                'lon' : tag_lon,
+                'lat': tag_lat
+            },
+            dataType: 'json',
+            success: function (data) {
+                alert(data["info"])
+                map.removeLayer(tagVectorPointsLayer);
+                tagVectorPointsLayer = null;
+                showTagPanel();
+            }
+        })
+        tag_panel = false;
+        var element = popup_add_tag_panel.getElement();
+        $(element).popover('destroy');
+    }
+
+    function deleteTag() {
+
+        if (document.getElementById('tag-name').value =="") {
+            alert("请填写名称");
+        }else {
+            $.ajax({
+                url: 'home/delete_tag',
+                type: 'post',
+                data: {
+                    'name': document.getElementById('tag-name').value
+                },
+                dataType: 'json',
+                success: function (data) {
+                    alert(data["info"])
+                    map.removeLayer(tagVectorPointsLayer);
+                    tagVectorPointsLayer = null;
+                    showTagPanel();
+                }
+            })
+            tag_panel = false;
+            var element = popup_add_tag_panel.getElement();
+            $(element).popover('destroy');
+        }
+    }
+
+    var add_name;
+    var add_comment;
+
+
+    function changeImage(current_icon_src) {
+        var  node = document.getElementById("popup-add-tag-panel")
+        if (node && node.hasAttribute("title"))
+            node.setAttribute("title", "更换标记样式");
+
+        add_name = document.getElementById("tag-name").value;
+        add_comment = document.getElementById('tag-comment').value;
+
+        var element = popup_add_tag_panel.getElement();
+            $(element).popover('destroy');
+            popup_add_tag_panel.setPosition(tag_coordinate);
+            $(element).popover({
+              placement: 'top',
+              animation: false,
+              html: true,
+              content: '<img style="margin-left: 10px" src="/static/img/tag/10.png" onclick="returnAddTagWithNewIcon(10)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/11.png" onclick="returnAddTagWithNewIcon(11)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/12.png" onclick="returnAddTagWithNewIcon(12)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/13.png" onclick="returnAddTagWithNewIcon(13)"/>' +
+                  '<img style="margin-left: 10px" style="margin-left: 10px" src="/static/img/tag/14.png" onclick="returnAddTagWithNewIcon(14)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/15.png" onclick="returnAddTagWithNewIcon(15)"/><br>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/20.png" onclick="returnAddTagWithNewIcon(20)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/21.png" onclick="returnAddTagWithNewIcon(21)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/22.png" onclick="returnAddTagWithNewIcon(22)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/23.png" onclick="returnAddTagWithNewIcon(23)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/24.png" onclick="returnAddTagWithNewIcon(24)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/25.png" onclick="returnAddTagWithNewIcon(25)"/><br>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/30.png" onclick="returnAddTagWithNewIcon(30)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/31.png" onclick="returnAddTagWithNewIcon(31)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/32.png" onclick="returnAddTagWithNewIcon(32)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/33.png" onclick="returnAddTagWithNewIcon(33)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/34.png" onclick="returnAddTagWithNewIcon(34)"/>' +
+                  '<img style="margin-left: 10px" src="/static/img/tag/35.png" onclick="returnAddTagWithNewIcon(35)"/><br>' +
+                  '<input style="margin-left: 10px" type="submit" value="返回" onclick="returnAddTag(this.name)" name="'+current_icon_src+'"/>',
+              template: '<div class="popover" role="tooltip" style="min-width:300px"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
+
+            });
+            $(element).popover('show');
+    }
+
+    function returnAddTagWithNewIcon(num) {
+        var icon_src = "/static/img/tag/" + num + ".png"
+        returnAddTag(icon_src);
+    }
+    
+    function returnAddTag(current_icon_src) {
+        var element = popup_add_tag_panel.getElement();
+            $(element).popover('destroy');
+            popup_add_tag_panel.setPosition(tag_coordinate);
+            $(element).popover({
+              placement: 'top',
+              animation: false,
+              html: true,
+              content: '<strong style="padding-right: 5px">名称</strong><input type="text" id="tag-name" style="height:20px;width:180px;" maxlength="50" value=\"' + add_name +'\" placeholder="我的标记"/>' +
+                  '<img id="tag-img" src="' +current_icon_src +'" height="30" width="30"/><br></div>' +
+                  '<div style="padding-top:5px"><strong style="padding-right: 5px">备注</strong><textarea id="tag-comment" style="width:180px;height:100px;vertical-align:top;" placeholder="我的备注">' + add_comment +'</textarea>' +
+                  '<a onclick="changeImage(this.name)" name="' + current_icon_src + '"style="padding-left: 5px">更换</a><br></div>' +
+                  '<div align="right" style="padding-top: 10px; margin-right: 10px"><input type="submit" value="保存" onclick="saveTag()">' +
+                  '<input type="submit" value="删除" onclick="deleteTag()"></div>',
+                template: "<div class=\"popover\" role=\"tooltip\" style='min-width: 300px'><div class=\"arrow\"></div><h3 class=\"panel-add-title\">添加标记" +
+                      "<a style=\"float:right; font-size:1em;\" onclick=\"closeAddTagPanel()\">x</a></h3>" +
+                      "<div class=\"popover-content\"></div></div>"
+              });
+            $(element).popover('show');
+    }
+
+
+
+
+
+
+
+        //alert(show_colors["#4eb9f9"].length);
+</script>
+
+</body>
+</html>
